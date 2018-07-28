@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bikecouch/pages/register_page.dart';
+import 'package:bikecouch/widgets/nice_button.dart';
+import 'package:bikecouch/widgets/nice_form_field.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -10,50 +12,19 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
 
-    final email = TextFormField(
-      autocorrect: false,
+    final email = NiceFormField(
+      hintText: 'Email',
       keyboardType: TextInputType.emailAddress,
-      decoration: InputDecoration(
-        hintText: 'Email',
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7.0)
-        )
-      )
     );
 
-    final password = TextFormField(
-      autocorrect: false,
+    final password = NiceFormField(
+      hintText: 'Password', 
       obscureText: true,
-      decoration: InputDecoration(
-        hintText: 'Password',
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7.0)
-        )
-      )
     );
 
-    final submit = GestureDetector(
-      onTap: (){print('login');},
-      child: Container(
-        height: 55.0,
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
-          borderRadius: BorderRadius.circular(7.0)
-        ),
-        child: Center (
-          child: Text(
-            'Login',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            )
-          )
-        ),
-      ),
+    final submit = NiceButton(
+      onPress: (){},
+      text: 'Login',
     );
 
     final signup = Center(

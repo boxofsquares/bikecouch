@@ -1,65 +1,48 @@
 import 'package:flutter/material.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:bikecouch/widgets/nice_button.dart';
+import 'package:bikecouch/widgets/nice_form_field.dart';
+
 class RegisterPage extends StatefulWidget {
   static String tag = 'RegisterPage';
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   _RegisterPageState createState() => new _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  
+  registerAccount() {
+    
+  }
+  
+  
   @override
   Widget build(BuildContext context) {
 
-    final email = TextFormField(
-      autocorrect: false,
+    final email = NiceFormField(
+      hintText: 'Email',
       keyboardType: TextInputType.emailAddress,
-      decoration: InputDecoration(
-        hintText: 'Email',
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7.0)
-        )
-      )
     );
 
-    final password = TextFormField(
-      autocorrect: false,
+    final password = NiceFormField(
+      hintText: 'Password', 
       obscureText: true,
-      decoration: InputDecoration(
-        hintText: 'Password',
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(7.0)
-        )
-      )
     );
 
-    final submit = GestureDetector(
-      onTap: (){},
-      child: Container(
-        height: 55.0,
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
-          borderRadius: BorderRadius.circular(7.0)
-        ),
-        child: Center (
-          child: Text(
-            'Sign Up',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            )
-          )
-        ),
-      ),
+    final submit = NiceButton(
+      onPress: (){},
+      text: 'Sign Up',
     );
+
 
     return Scaffold(
       body: Center(
         child: ListView(
+          physics: NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           padding: EdgeInsets.only(left: 20.0, right: 20.0),
           children: <Widget>[
