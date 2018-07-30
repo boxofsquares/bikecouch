@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
+import 'dart:async';
+// a better list of words can be pulled form here:
+//https://api.datamuse.com/words?topics=kitchen&md=pd
+
 import 'dart:math';
+
+import 'components/list_card.dart';
+import 'datamuse.dart' as DataMuse;
+import 'target_list.dart';
+
+// const WORD_SOURCE = 0; // use for english nouns
+const WORD_SOURCE = 1; // use for DataMuse API
 
 class WordList extends StatefulWidget {
   @override
@@ -38,28 +49,31 @@ class _WordListState extends State<WordList> {
       body: new ListView(
         children: createWordRows(),
       ),
-      floatingActionButton: RaisedButton(
-        child: Text("Choose your target!", style: TextStyle(fontSize: 18.00)),
-        onPressed: _selectedWords.length >= 2 ? setChallenge : null,
-        color: Colors.green,
-        textColor: Colors.white,
-        padding: EdgeInsets.symmetric(vertical: 16.00, horizontal: 32.00),
-      ),
+      floatingActionButton: _selectedWords.length >= 2
+          ? RaisedButton(
+              child: Text("Choose your target!",
+                  style: TextStyle(fontSize: 18.00)),
+              onPressed: setChallenge,
+              color: Colors.green,
+              textColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 16.00, horizontal: 32.00),
+              shape: new RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                    999.99), // choosing a ridiculous number makes the bordes circular
+                side: BorderSide(color: Colors.transparent),
+              ))
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  List<ListTile> createWordRows() {
+  List<ListCard> createWordRows() {
     return _allWords.map((String word) {
-      var sel = _selectedWords.contains(word);
-      return ListTile(
-        title: Text(
-          word,
-          textAlign: sel ? TextAlign.right : TextAlign.left,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.00),
-        ),
-        onTap: () => _chooseWord(word),
-        selected: sel,
+      final isSelected = _selectedWords.contains(word);
+      return ListCard(
+        onTap: _chooseWord,
+        isSelected: isSelected,
+        text: word,
       );
     }).toList();
   }
@@ -77,17 +91,39 @@ class _WordListState extends State<WordList> {
   }
 
   void setChallenge() {
-    // TODO: Send the 2 words to the next screen.
+    Navigator.of(context).push(
+      new MaterialPageRoute(
+        builder: (context) => new TargetList(
+          challenge: _selectedWords,
+        ),
+      )
+    );
   }
 
-  void shuffleWords() {
+  void shuffleWords() async {
+    List<String> wordList;
+
+    if (WORD_SOURCE == 0) {
+      wordList = nouns;
+    } else {
+      DataMuse.DataMuseResponse res = await DataMuse.datamuseFetchData();
+      wordList = res.words.where((word) {
+        return word.tags.length < 2 && word.tags.contains("n");
+      })
+      .map((word) {
+        return word.word;
+      }).toList();
+    }
+
     num = Random(new DateTime.now().millisecondsSinceEpoch);
+
     setState(() {
       _selectedWords.clear();
       _allWords.clear();
+
       for (var i = 0; i < 10; i++) {
-        var index = num.nextInt(nouns.length);
-        _allWords.add(nouns[index]);
+        var index = num.nextInt(wordList.length);
+        _allWords.add(wordList[index]);
       }
     });
   }
