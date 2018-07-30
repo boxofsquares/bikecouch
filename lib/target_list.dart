@@ -28,6 +28,7 @@ class TargetListState extends State<TargetList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: new AppBar(
+        elevation: 0.0,
         title: new Text('Pick Your Target!'),
       ),
       body: new ListView(

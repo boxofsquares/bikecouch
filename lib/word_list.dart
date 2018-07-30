@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Custom Packages
 import 'components/list_card.dart';
@@ -13,9 +14,8 @@ import 'components/pill_button.dart';
 const WORD_SOURCE = 1; // use for DataMuse API
 
 class WordList extends StatefulWidget {
-  /*
-    TODO: Add login 'tokens' from login screen.
-  */
+  WordList({Key key, this.user}) : super(key: key);
+  final FirebaseUser user;
 
   @override
   State<StatefulWidget> createState() {
@@ -41,7 +41,7 @@ class _WordListState extends State<WordList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: new AppBar(
-        title: new Text('Pick The Challenge!'),
+        title: new Text('${widget.user.email}'),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.shuffle),
