@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikecouch/widgets/nice_button.dart';
 
 class HomePage extends StatefulWidget {
+  HomePage({this.user});
+  final FirebaseUser user;
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -26,7 +28,9 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: <Widget>[
           SizedBox(height: 100.0),
-          Text('replace with user data'),
+          Text(
+            'Hi, ${widget.user.email}!'
+          ),
           NiceButton(
             onPress:(){
               _handleSignOut()

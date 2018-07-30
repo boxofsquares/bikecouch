@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
           // some activity spinner
         } else {
           if (snapshot.hasData) {
-            return HomePage(); //user: snapshot.data to pass data
+            return HomePage(user: snapshot.data); //user: snapshot.data to pass data
           }
           return LoginPage();
         }
