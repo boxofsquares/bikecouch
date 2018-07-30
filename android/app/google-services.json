@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "366755587646",
+    "firebase_url": "https://bikecouch.firebaseio.com",
+    "project_id": "bikecouch",
+    "storage_bucket": "bikecouch.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:366755587646:android:7446664d78dc928e",
+        "android_client_info": {
+          "package_name": "com.example.bikecouch"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "366755587646-ojoegu1l9ijr0n6u5d96bu7c4d783ss6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWQ1slgRXZaOEh_XyM0kitrYFw0BkAHls"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
