@@ -71,15 +71,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2"
-<<<<<<< HEAD
-  firebase_auth:
-    dependency: "direct main"
-    description:
-      name: firebase_auth
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.5.15"
-=======
   english_words:
     dependency: "direct main"
     description:
@@ -87,7 +78,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.1.3"
->>>>>>> word_list
+  firebase_auth:
+    dependency: "direct main"
+    description:
+      name: firebase_auth
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.15"
   flutter:
     dependency: "direct main"
     description: flutter
