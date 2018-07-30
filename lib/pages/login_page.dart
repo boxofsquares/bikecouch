@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:bikecouch/pages/register_page.dart';
 import 'package:bikecouch/widgets/nice_button.dart';
 
 
@@ -76,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
     final signup = Center(
       child: GestureDetector(
         onTap: (){
-          Navigator.of(context).pushNamed(RegisterPage.tag);
+          Navigator.pushNamed(context, '/register');
         },
         child: Text(
           'Sign Up',

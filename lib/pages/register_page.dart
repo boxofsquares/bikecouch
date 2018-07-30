@@ -21,6 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
   
   String _email;
   String _password;
+  bool _isLoading = false;
 
   Future<FirebaseUser> _handleRegister() async {
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
@@ -89,10 +90,11 @@ class _RegisterPageState extends State<RegisterPage> {
         final form = _formKey.currentState;
         if (form.validate()) {
           form.save();
+          setState(() => _isLoading = true);
           _handleRegister()
-            .then((value) => print(value))
-            .catchError((e) => _makeSnackBar(e.details)
-          );
+            .then((value) => Navigator.pop(context))
+            .catchError((e) => _makeSnackBar(e.details));
+          setState(() => _isLoading = false);
         }
       },
       child: Container(
@@ -102,14 +104,18 @@ class _RegisterPageState extends State<RegisterPage> {
           borderRadius: BorderRadius.circular(7.0)
         ),
         child: Center (
-          child: Text(
+          child: _isLoading 
+          ? CircularProgressIndicator(
+            backgroundColor: Colors.white,
+          ) 
+          : Text(
             'Sign Up',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.white,
             )
-          )
-        ),
+          ),
+        )
       ),
     );
 
