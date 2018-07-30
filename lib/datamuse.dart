@@ -18,7 +18,7 @@ class DataMuseWord {
         Hint found here:
         https://github.com/flutter/flutter/issues/18979
         Possible Solution:
-        https://docs.flutter.io/flutter/da(contrt-core/List/cast.html
+        https://docs.flutter.io/flutter/dart-core/List/cast.html
         This suggests that cast is performed on ALL INSTANCES in list,
         so only casting the elements of the list, not the list object itself.
       */
@@ -41,7 +41,7 @@ class DataMuseResponse {
 
 Future<DataMuseResponse> datamuseFetchData() async {
   // hard coded to look for kitchen related words for now
-  final response = await http.get('https://api.datamuse.com/words?topics=car&md=pd&max=300');
+  final response = await http.get('https://api.datamuse.com/words?topics=kitchen&md=pd&max=300');
 
   if (response.statusCode == 200) {
     return DataMuseResponse.fromJSON(json.decode(response.body));

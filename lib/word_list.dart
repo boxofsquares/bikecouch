@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:async';
-// a better list of words can be pulled form here:
-//https://api.datamuse.com/words?topics=kitchen&md=pd
-
 import 'dart:math';
 
+// Custom Packages
 import 'components/list_card.dart';
 import 'datamuse.dart' as DataMuse;
 import 'target_list.dart';
+import 'components/pill_button.dart';
 
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
 
 class WordList extends StatefulWidget {
+  /*
+    TODO: Add login 'tokens' from login screen.
+  */
+
   @override
   State<StatefulWidget> createState() {
     return _WordListState();
@@ -45,23 +48,17 @@ class _WordListState extends State<WordList> {
             onPressed: shuffleWords,
           )
         ],
+        elevation: 0.0,
       ),
       body: new ListView(
         children: createWordRows(),
+        padding: EdgeInsetsDirectional.only(bottom: 60.00),
       ),
       floatingActionButton: _selectedWords.length >= 2
-          ? RaisedButton(
-              child: Text("Choose your target!",
-                  style: TextStyle(fontSize: 18.00)),
-              onPressed: setChallenge,
-              color: Colors.green,
-              textColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 16.00, horizontal: 32.00),
-              shape: new RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                    999.99), // choosing a ridiculous number makes the bordes circular
-                side: BorderSide(color: Colors.transparent),
-              ))
+          ? PillButton(
+            text: "Choose your target!",
+            onTap: setChallenge,
+          )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

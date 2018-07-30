@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:bikecouch/components/list_card.dart';
+
+import 'components/list_card.dart';
+import 'components/pill_button.dart';
 
 class TargetList extends StatefulWidget {
   final List<String> challenge;
@@ -19,6 +21,7 @@ class TargetListState extends State<TargetList> {
   @override
   void initState() {
     //TODO: Fetch all friends from somewhere...
+    super.initState();
   }
 
   @override
@@ -31,18 +34,10 @@ class TargetListState extends State<TargetList> {
         children: buildFriendList(),
       ),
       floatingActionButton: _selectedTarget != null
-          ? RaisedButton(
-              child: Text("Choose your target!",
-                  style: TextStyle(fontSize: 18.00)),
-              onPressed: () => null,
-              color: Theme.of(context).primaryColor,
-              textColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 16.00, horizontal: 32.00),
-              shape: new RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                    999.99), // choosing a ridiculous number makes the bordes circular
-                side: BorderSide(color: Colors.transparent),
-              ))
+          ? PillButton(
+            text: 'Send the challenge!',
+            onTap: () => null,
+          )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
