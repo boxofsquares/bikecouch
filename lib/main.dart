@@ -6,11 +6,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bikecouch/pages/login_page.dart';
 import 'package:bikecouch/pages/register_page.dart';
 import 'package:bikecouch/pages/home_page.dart';
+import 'package:bikecouch/word_list.dart';
 
 void main() => runApp(new MyApp());
 
 class MyApp extends StatelessWidget {
-  // final routes = <String, WidgetBuilder> {
   //   RegisterPage.tag: (context) => RegisterPage(),
   // };
 

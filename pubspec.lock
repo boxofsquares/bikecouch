@@ -16,7 +16,7 @@ packages:
     source: hosted
     version: "1.4.3"
   async:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: async
       url: "https://pub.dartlang.org"
@@ -71,6 +71,7 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2"
+<<<<<<< HEAD
   firebase_auth:
     dependency: "direct main"
     description:
@@ -78,6 +79,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.5.15"
+=======
+  english_words:
+    dependency: "direct main"
+    description:
+      name: english_words
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.1.3"
+>>>>>>> word_list
   flutter:
     dependency: "direct main"
     description: flutter
@@ -110,7 +120,7 @@ packages:
     source: hosted
     version: "0.13.3"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       url: "https://pub.dartlang.org"
