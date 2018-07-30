@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:bikecouch/pages/register_page.dart';
 import 'package:bikecouch/widgets/nice_button.dart';
-import 'package:bikecouch/widgets/nice_form_field.dart';
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -9,21 +13,63 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _auth = FirebaseAuth.instance;
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _formKey = GlobalKey<FormState>();
+  var _email;
+  var _password;
+
+  Future<FirebaseUser> _handleLogin() async {
+    return await _auth.signInWithEmailAndPassword(email: _email, password: _password);
+  }
+
+  _makeSnackBar(String message) {
+    final snackbar = SnackBar(
+      content: Text(message)
+    );
+    _scaffoldKey.currentState.showSnackBar(snackbar);
+  }
+
   @override
   Widget build(BuildContext context) {
 
-    final email = NiceFormField(
-      hintText: 'Email',
+    final email = TextFormField(
+      autocorrect: false,
       keyboardType: TextInputType.emailAddress,
+      decoration: InputDecoration(
+        hintText: 'Email',
+        filled: true,
+        fillColor: Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(7.0)
+        )
+      ),
+      onSaved: (val) => _email = val,
     );
 
-    final password = NiceFormField(
-      hintText: 'Password', 
+    final password = TextFormField(
+      autocorrect: false,
       obscureText: true,
+      decoration: InputDecoration(
+        hintText: 'Password',
+        filled: true,
+        fillColor: Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(7.0)
+        )
+      ),
+      onSaved: (val) => _password = val,
     );
 
     final submit = NiceButton(
-      onPress: (){},
+      onPress: (){
+        final form = _formKey.currentState;
+        form.save();
+        _handleLogin()
+          .then((FirebaseUser user) => print(user))
+          .catchError((e) => _makeSnackBar(e.details));
+      },
       text: 'Login',
     );
 
@@ -43,19 +89,23 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     return Scaffold(
-      body: Center(
-        child: ListView(
-          shrinkWrap: true,
-          padding: EdgeInsets.only(left: 20.0, right: 20.0),
-          children: <Widget>[
-            email,
-            SizedBox(height: 10.0),
-            password,
-            SizedBox(height: 75.0),
-            submit,
-            SizedBox(height: 20.0),
-            signup,
-          ]
+      key: _scaffoldKey,
+      body: Padding(
+        padding: EdgeInsets.only(left: 16.0, right: 16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              SizedBox(height: 100.0), //compensate for lack of logo
+              email,
+              SizedBox(height: 10.0),
+              password,
+              SizedBox(height: 75.0),
+              submit,
+              SizedBox(height: 20.0),
+              signup,
+            ]
+          )
         )
       )
     );

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 class NiceFormField extends StatelessWidget {
-  NiceFormField({@required this.hintText, this.keyboardType = TextInputType.emailAddress, this.obscureText = false});
+  NiceFormField({
+    @required this.hintText, 
+    this.keyboardType = TextInputType.emailAddress, 
+    this.obscureText = false,
+  });
   
   final hintText;
   final keyboardType;
   final obscureText;
-  
   
   @override
   Widget build(BuildContext context) {
@@ -21,7 +24,7 @@ class NiceFormField extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(7.0)
         )
-      )
+      ),
     );
   }
 }
