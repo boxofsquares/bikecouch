@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:bikecouch/widgets/nice_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 
 
@@ -16,6 +17,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final Firestore _store = Firestore.instance;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
   
@@ -25,8 +27,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<FirebaseUser> _handleRegister() async {
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
+    _store.collection('userDetails').document().setData({
+      'displayName': 'Janik',
+      'uuid': user.getIdToken(),
+    });
     return user;
   }
+
+
 
   _makeSnackBar(String message) {
     final snackbar = SnackBar(

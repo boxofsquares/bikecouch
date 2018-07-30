@@ -46,6 +46,7 @@ class MyApp extends StatelessWidget {
       ),
       home: _handleAuthFlow(),
       routes: {
+        '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
       },
     );

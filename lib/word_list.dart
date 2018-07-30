@@ -17,6 +17,7 @@ class WordList extends StatefulWidget {
   WordList({Key key, this.user}) : super(key: key);
   final FirebaseUser user;
 
+
   @override
   State<StatefulWidget> createState() {
     return _WordListState();
@@ -30,6 +31,8 @@ class _WordListState extends State<WordList> {
   List<String> _selectedWords = List<String>();
   List<String> _allWords = List<String>();
   var num;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
 
   @override
   void initState() {
@@ -42,6 +45,13 @@ class _WordListState extends State<WordList> {
     return Scaffold(
       appBar: new AppBar(
         title: new Text('${widget.user.email}'),
+        leading: IconButton(
+          icon: Icon(Icons.exit_to_app),
+          onPressed: () { 
+            _auth.signOut();
+            Navigator.pushNamed(context, '/login');
+          }
+        ),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.shuffle),
