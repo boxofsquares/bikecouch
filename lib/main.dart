@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:bikecouch/pages/login_page.dart';
-import 'package:bikecouch/pages/register_page.dart';
-import 'package:bikecouch/pages/home_page.dart';
-import 'package:bikecouch/word_list.dart';
+import 'pages/login_page.dart';
+import 'pages/register_page.dart';
+import 'pages/word_list.dart';
 
 void main() => runApp(new MyApp());
 

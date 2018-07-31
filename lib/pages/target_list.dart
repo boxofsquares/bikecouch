@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'components/list_card.dart';
-import 'components/pill_button.dart';
+import '../components/list_card.dart';
+import '../components/pill_button.dart';
 
 class TargetList extends StatefulWidget {
   final List<String> challenge;

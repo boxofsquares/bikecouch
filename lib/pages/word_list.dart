@@ -5,10 +5,10 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Custom Packages
-import 'components/list_card.dart';
-import 'datamuse.dart' as DataMuse;
+import '../components/list_card.dart';
+import '../utils/datamuse.dart' as DataMuse;
 import 'target_list.dart';
-import 'components/pill_button.dart';
+import '../components/pill_button.dart';
 
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
