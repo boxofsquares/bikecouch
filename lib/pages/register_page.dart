@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../utils/storage.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -15,7 +16,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final Firestore _store = Firestore.instance;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
   
@@ -47,10 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<FirebaseUser> _handleRegister() async {
     setState(() => _isLoading = true);
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
-    _store.collection('userDetails').document().setData({
-      'displayName': _name,
-      'uuid': user.uid,
-    });
+    Storage.registerUserDetails(user.uid, _name);
     setState(() => _isLoading = false);
     return user;
   }

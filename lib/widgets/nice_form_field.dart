@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class NiceFormField extends StatelessWidget {
   NiceFormField({
     @required this.hintText, 
-    this.keyboardType = TextInputType.emailAddress, 
+    this.keyboardType = TextInputType.text, 
     this.obscureText = false,
   });
   
