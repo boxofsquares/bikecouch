@@ -21,6 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
   
   String _email;
   String _password;
+  String _name;
   bool _isLoading = false;
   final _emailFieldController = TextEditingController();
   final _passFieldController = TextEditingController();
@@ -47,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
     _store.collection('userDetails').document().setData({
-      'displayName': 'Random',
+      'displayName': _name,
       'uuid': user.uid,
     });
     setState(() => _isLoading = false);
@@ -130,7 +131,7 @@ class _RegisterPageState extends State<RegisterPage> {
         )
       ),
       validator: (value) {},
-      onSaved: (val) => _password = val,
+      onSaved: (val) => _name = val,
       controller: _nameFieldController,
     );
     
