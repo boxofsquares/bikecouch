@@ -28,8 +28,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<FirebaseUser> _handleRegister() async {
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
     _store.collection('userDetails').document().setData({
-      'displayName': 'Janik',
-      'uuid': user.getIdToken(),
+      'displayName': 'Random',
+      'uuid': user.uid,
     });
     return user;
   }
