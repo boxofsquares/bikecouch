@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       stream: FirebaseAuth.instance.onAuthStateChanged,
       builder: (BuildContext context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // some activity spinner
+          return Container(); //temp splash page
         } else {
           if (snapshot.hasData) {
             return WordList(user: snapshot.data); //user: snapshot.data to pass data
@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
         // primaryColor: Colors.green, //ask Janik which green he wants
-        // hintColor: Colors.grey[300],
+        hintColor: Colors.grey[300],
       ),
       home: _handleAuthFlow(),
       routes: {

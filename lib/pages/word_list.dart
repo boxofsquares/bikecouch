@@ -49,7 +49,7 @@ class _WordListState extends State<WordList> {
           icon: Icon(Icons.exit_to_app),
           onPressed: () { 
             _auth.signOut();
-            Navigator.pushNamed(context, '/login');
+            // Navigator.pop(context); //don't need this, statechang will handle it
           }
         ),
         actions: <Widget>[

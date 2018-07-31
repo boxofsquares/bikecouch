@@ -5,8 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
-
-
 class RegisterPage extends StatefulWidget {
   static String tag = 'RegisterPage';
 
@@ -24,17 +22,50 @@ class _RegisterPageState extends State<RegisterPage> {
   String _email;
   String _password;
   bool _isLoading = false;
+  final _emailFieldController = TextEditingController();
+  final _passFieldController = TextEditingController();
+  final _nameFieldController = TextEditingController();
+  bool _requiredFieldsFilled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFieldController.addListener(_checkIfFilled);
+    _passFieldController.addListener(_checkIfFilled);
+    _nameFieldController.addListener(_checkIfFilled);
+  }
+
+  _checkIfFilled() {
+    if (_emailFieldController.text.isNotEmpty && _passFieldController.text.isNotEmpty && _nameFieldController.text.isNotEmpty) {
+      setState(() => _requiredFieldsFilled = true);
+    } else {
+      setState(() => _requiredFieldsFilled = false);
+    }
+  }
 
   Future<FirebaseUser> _handleRegister() async {
+    setState(() => _isLoading = true);
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
     _store.collection('userDetails').document().setData({
       'displayName': 'Random',
       'uuid': user.uid,
     });
+    setState(() => _isLoading = false);
     return user;
   }
 
-
+    FirebaseUser _handleRegisterWrapper() {
+    FirebaseUser user;
+    setState(() => _isLoading = true);
+    _handleRegister()
+      .then((v) => Navigator.pop(context))
+      .catchError((e){
+        print('caught error');
+        setState(() => _isLoading = false);
+        _makeSnackBar(e.details);
+      });
+    return user;
+  }
 
   _makeSnackBar(String message) {
     final snackbar = SnackBar(
@@ -58,10 +89,9 @@ class _RegisterPageState extends State<RegisterPage> {
           borderRadius: BorderRadius.circular(7.0)
         )
       ),
-      validator: (value) {
-        
-      },
+      validator: (value) {},
       onSaved: (val) => _email = val,
+      controller: _emailFieldController,
     );
 
     // NiceFormField(
@@ -86,6 +116,22 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       },
       onSaved: (val) => _password = val,
+      controller: _passFieldController,
+    );
+
+    final name = TextFormField(
+      autocorrect: false,
+      decoration: InputDecoration(
+        hintText: 'Name',
+        filled: true,
+        fillColor: Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(7.0)
+        )
+      ),
+      validator: (value) {},
+      onSaved: (val) => _password = val,
+      controller: _nameFieldController,
     );
     
     // NiceFormField(
@@ -95,26 +141,26 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final submit = GestureDetector(
       onTap: (){
-        final form = _formKey.currentState;
-        if (form.validate()) {
-          form.save();
-          setState(() => _isLoading = true);
-          _handleRegister()
-            .then((value) => Navigator.pop(context))
-            .catchError((e) => _makeSnackBar(e.details));
-          setState(() => _isLoading = false);
+        if (_requiredFieldsFilled) {
+          final form = _formKey.currentState;
+          if (form.validate()) {
+            form.save();
+            _handleRegisterWrapper();
+          }
+        } else {
+          print('Missing required fields');
         }
       },
       child: Container(
         height: 55.0,
         decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
+          color: _requiredFieldsFilled ? Theme.of(context).primaryColor : Theme.of(context).primaryColorLight,
           borderRadius: BorderRadius.circular(7.0)
         ),
         child: Center (
           child: _isLoading 
           ? CircularProgressIndicator(
-            backgroundColor: Colors.white,
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColorLight),
           ) 
           : Text(
             'Sign Up',
@@ -128,6 +174,10 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Create Account'),
+        elevation: 0.0,
+      ),
       key: _scaffoldKey,
       body: Padding(
         padding: EdgeInsets.only(left: 16.0, right: 16.0),
@@ -135,11 +185,13 @@ class _RegisterPageState extends State<RegisterPage> {
           key: _formKey,
           child: Column(
             children: [
-              SizedBox(height: 100.0), //compensate for lack of logo
+              SizedBox(height: 30.0),
               email,
               SizedBox(height: 10.0),
               password,
-              SizedBox(height: 75.0),
+              SizedBox(height: 10.0),
+              name,
+              SizedBox(height: 55.0),
               submit,
             ]
           )
