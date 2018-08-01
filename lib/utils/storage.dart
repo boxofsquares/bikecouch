@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user.dart';
 import '../models/friendship.dart';
+import '../models/invitation.dart';
 
 
 class Storage {
@@ -89,6 +90,41 @@ class Storage {
     return Future.value(true);
   }
 
+
+  /*
+    Accept friend request
+  */
+  static Future<bool> acceptFriendRequest(String invitationUID) async {
+
+    DocumentSnapshot ds = await _store
+      .collection('friendInvitation')
+      .document(invitationUID)
+      .get();
+
+    _store
+      .collection('friends')
+      .document()
+      .setData({
+        'uuid': ds.data['invitee'],
+        'fuid': ds.data['inviter'],
+      });
+
+    _store
+      .collection('friends')
+      .document()
+      .setData({
+        'uuid': ds.data['inviter'],
+        'fuid': ds.data['invitee'],
+      });
+
+    _store
+      .collection('friendInvitation')
+      .document(invitationUID)
+      .delete();
+  }
+
+
+
   /*
     Get user details on with given uuid.
   */
@@ -139,4 +175,26 @@ class Storage {
     }).toList();
     return await Future.wait(fs);
   } 
+ 
+
+  /*
+    Get all pending friend requests.
+  */
+  static Future<List<Invitation>> getPendingFriendRequests(String uuid) async {
+    QuerySnapshot q = await _store
+      .collection('friendInvitation')
+      .where('invitee', isEqualTo: uuid)
+      .getDocuments();
+    
+    List<Future<Invitation>> futures = q.documents.map((document) async {
+      DocumentSnapshot s = await _store
+        .collection('userDetails')
+        .document(document['inviter'])
+        .get();
+        
+        return Invitation(user: User(uuid: s.data['uuid'], email: '', name: s.data['displayName'], image: ''), invitationUID: document.documentID);
+    }).toList();
+
+    return await Future.wait(futures); 
+  }
 }

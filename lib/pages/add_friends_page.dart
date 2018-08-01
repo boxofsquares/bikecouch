@@ -11,6 +11,11 @@ import '../models/friendship.dart';
 import '../models/app_state.dart';
 import '../app_state_container.dart';
 
+import '../app_state_container.dart';
+import '../models/app_state.dart';
+import '../models/user.dart';
+import '../models/invitation.dart';
+
 class AddFriendsPage extends StatefulWidget {
   AddFriendsPage({Key key}) : super(key: key);
 
@@ -24,25 +29,88 @@ class AddFriendsPageState extends State<AddFriendsPage>
     with SingleTickerProviderStateMixin {
   AppState appState;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  int _currentTabIndex;
+
   List<FirebaseUser> user;
   List<Friendship> _displayedFriendships;
+  List<Invitation> _pendingPeople;
 
   @override
   void initState() {
     _displayedFriendships = List<Friendship>();
+    _pendingPeople = List<Invitation>();
+    _currentTabIndex = 0;
+
     super.initState();
 
+  }
+
+
+  _handleTabBar(int i) {
+    if (i == 1) {
+      setState(() {
+              Storage.getPendingFriendRequests(appState.user.uuid)
+                .then((invitations) => _pendingPeople = invitations)
+                .catchError((e) => print(e));
+                _currentTabIndex = 1;
+            });
+    } else {
+      setState(() => _currentTabIndex = 0);
+    }
+    
+
+  }
+
+  buildPendingList() {
+    return _pendingPeople.length > 0
+        ? _pendingPeople.map((invitation) {
+            return new ListCard(
+              text: invitation.user.name,
+              leadingIcon: new Icon(Icons.person),
+              // trailingIcon: Row(
+              //   children: <Widget>[
+              //     GestureDetector(
+              //       onTap: (() => print('accept')),
+              //       child: Icon(Icons.check_circle),
+              //     ),
+              //     GestureDetector(
+              //       child: Icon(Icons.delete_forever),
+              //       onTap: (() => print('delete')),
+              //     ),
+              //   ],
+              // ) 
+              trailingIcon: GestureDetector(
+                onTap: (() {
+                  Storage.acceptFriendRequest(invitation.invitationUID);
+                  print('sent with ${invitation.invitationUID}');
+                  setState(() {
+                              Storage.getPendingFriendRequests(appState.user.uuid)
+                              .then((invitations) => _pendingPeople = invitations)
+                              .catchError((e) => print(e));        
+                              });
+                }),
+                child: Icon(Icons.check_circle),
+              ),
+            );
+          }).toList()
+        : <Widget>[
+            new ListTile(
+              title: Text(
+                'No friend requests :(',
+                style: TextStyle(color: Colors.grey[400]),
+                textAlign: TextAlign.center,
+              ),
+              contentPadding: EdgeInsets.all(18.00),
+            )
+          ];
   }
 
   @override
   Widget build(BuildContext context) {
     appState = AppStateContainer.of(context).state;
-    return Scaffold(
-      appBar: new AppBar(
-        elevation: 0.0,
-        title: new Text('Search for New Friends'),
-      ),
-      body: new Column(
+
+    final search = new Column(
         children: <Widget>[
           new Container(
               decoration: new BoxDecoration(
@@ -69,6 +137,33 @@ class AddFriendsPageState extends State<AddFriendsPage>
             ),
           ),
         ],
+      );
+
+    final pending = ListView(
+      children: buildPendingList(),
+    );
+
+    
+
+    return Scaffold(
+      appBar: new AppBar(
+        elevation: 0.0,
+        title: new Text('Add Friends'),
+      ),
+      body: _currentTabIndex == 0 ? search : pending,
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            title: Text('Find Friends'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_pin),
+            title: Text('Friend Requests'),
+          )
+        ],
+        onTap: (int i) => _handleTabBar(i),
+        currentIndex: _currentTabIndex,
       ),
     );
   }
