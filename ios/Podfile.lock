@@ -108,7 +108,7 @@ DEPENDENCIES:
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_storage (from `.symlinks/plugins/firebase_storage/ios`)
-  - Flutter (from `.symlinks/flutter/ios-release`)
+  - Flutter (from `.symlinks/flutter/ios`)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
@@ -141,7 +141,7 @@ EXTERNAL SOURCES:
   firebase_storage:
     :path: ".symlinks/plugins/firebase_storage/ios"
   Flutter:
-    :path: ".symlinks/flutter/ios-release"
+    :path: ".symlinks/flutter/ios"
 
 SPEC CHECKSUMS:
   BoringSSL: cf3f1793eb6e3c445c4d150456341f149c268a35
