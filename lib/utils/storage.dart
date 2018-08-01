@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../models/user.dart';
 
 
 class Storage {
   static final Firestore _store = Firestore.instance;
 
   static Future<bool> registerUserDetails(String userUID, String displayName){
-    _store.collection('userDetails').document().setData({
+    _store.collection('userDetails').document(userUID).setData({
       'displayName': displayName,
-      'uuid': userUID,
     });
     // for now, return true
     return Future.value(true);
@@ -84,5 +86,18 @@ class Storage {
       });
     // for now, always return true
     return Future.value(true);
+  }
+
+  /*
+    Get user details on with given uuid.
+  */
+  static Future<User> getUserDetails(FirebaseUser firebaseUser) async {
+    DocumentSnapshot d = await _store
+      .collection('userDetails')
+      .document(firebaseUser.uid)
+      .get();
+    
+    print('email: ${firebaseUser.email}, image: ${d['image']}, name: ${d['displayName']}');
+    return User(uuid: firebaseUser.uid, email: firebaseUser.email, image: d['image'], name: d['displayName']);
   }
 }

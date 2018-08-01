@@ -3,10 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:bikecouch/widgets/nice_button.dart';
+import '../utils/storage.dart';
+import '../models/user.dart';
+
+import '../app_state_container.dart';
+import '../models/app_state.dart';
 
 
 class LoginPage extends StatefulWidget {
+  LoginPage();
+
   @override
   _LoginPageState createState() => new _LoginPageState();
 }
@@ -21,7 +27,8 @@ class _LoginPageState extends State<LoginPage> {
   final _emailFieldController = TextEditingController();
   final _passFieldController = TextEditingController();
   bool _requiredFieldsFilled = false;
-  bool _isLoading = false;
+  // bool _isLoading = false;
+  AppState appState;
 
   @override
   void initState() {
@@ -38,25 +45,26 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<FirebaseUser> _handleLogin() async {
-    setState(() => _isLoading = true);
-    FirebaseUser user = await _auth.signInWithEmailAndPassword(email: _email, password: _password);
-    setState(() => _isLoading = false);
+  Future<User> _handleLogin() async {
+    // setState(() => _isLoading = true);
+    FirebaseUser firebaseUser = await _auth.signInWithEmailAndPassword(email: _email, password: _password);
+    User user = await Storage.getUserDetails(firebaseUser);
+    // setState(() => _isLoading = false);
     return user;
   }
 
-  FirebaseUser _handleLoginWrapper() {
-    FirebaseUser user;
-    setState(() => _isLoading = true);
-    _handleLogin()
-      .then((value) => user = value)
-      .catchError((e){
-        print('caught error');
-        setState(() => _isLoading = false);
-        _makeSnackBar(e.details);
-      });
-    return user;
-  }
+  // _handleLoginWrapper() {
+  //   setState(() => _isLoading = true);
+  //   _handleLogin()
+  //     .then((value) {
+        
+  //     })
+  //     .catchError((e){
+  //       print('caught error');
+  //       setState(() => _isLoading = false);
+  //       _makeSnackBar(e.details);
+  //     });
+  // }
 
   _makeSnackBar(String message) {
     final snackbar = SnackBar(
@@ -67,6 +75,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    var container = AppStateContainer.of(context);
+    appState = container.state;
 
     final email = TextFormField(
       autocorrect: false,
@@ -101,9 +112,18 @@ class _LoginPageState extends State<LoginPage> {
   final submit = GestureDetector(
       onTap: (){
         if (_requiredFieldsFilled) {
+          container.isLoading(true);
           final form = _formKey.currentState;
-        form.save();
-        _handleLoginWrapper();
+          form.save();
+          _handleLogin()
+            .then((user) {
+              container.setUser(user);
+              container.isSignedIn(true);
+            })
+            .catchError((e) {
+              container.isLoading(false);
+              _makeSnackBar(e.details);
+            });
         } else {
           print('Missing required fields');
         }
@@ -115,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(7.0)
         ),
         child: Center (
-          child: _isLoading ? CircularProgressIndicator(
+          child: appState.isLoading ? CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColorLight),
           ) : Text(
             'Log In',

@@ -10,13 +10,14 @@ import '../utils/datamuse.dart' as DataMuse;
 import 'target_list.dart';
 import '../components/pill_button.dart';
 
+import '../models/app_state.dart';
+import '../app_state_container.dart';
+import '../models/user.dart';
+
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
 
 class WordList extends StatefulWidget {
-  WordList({Key key, this.user}) : super(key: key);
-  final FirebaseUser user;
-
 
   @override
   State<StatefulWidget> createState() {
@@ -28,6 +29,7 @@ class WordList extends StatefulWidget {
   Screen that lets the user choose from two a list of 10 words.
 */
 class _WordListState extends State<WordList> {
+  AppState appState;
   List<String> _selectedWords = List<String>();
   List<String> _allWords = List<String>();
   var num;
@@ -42,14 +44,19 @@ class _WordListState extends State<WordList> {
 
   @override
   Widget build(BuildContext context) {
+    var container = AppStateContainer.of(context);
+    appState = container.state;
+
     return Scaffold(
       appBar: new AppBar(
-        title: new Text('${widget.user.email}'),
+        title: new Text('${appState.user.name}'), //${appState.user.name}
+        // title: new Text('Test'), //${appState.user.name}
+
         leading: IconButton(
           icon: Icon(Icons.exit_to_app),
           onPressed: () { 
             _auth.signOut();
-            // Navigator.pop(context); //don't need this, statechang will handle it
+            container.isSignedIn(false);
           }
         ),
         actions: <Widget>[
