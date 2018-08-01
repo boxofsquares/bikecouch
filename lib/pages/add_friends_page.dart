@@ -6,6 +6,10 @@ import 'package:english_words/english_words.dart';
 import '../components/list_card.dart';
 import '../components/fade_animation_widget.dart';
 import '../utils/storage.dart';
+import '../models/user.dart';
+import '../models/friendship.dart';
+import '../models/app_state.dart';
+import '../app_state_container.dart';
 
 class AddFriendsPage extends StatefulWidget {
   AddFriendsPage({Key key}) : super(key: key);
@@ -18,20 +22,21 @@ class AddFriendsPage extends StatefulWidget {
 
 class AddFriendsPageState extends State<AddFriendsPage>
     with SingleTickerProviderStateMixin {
+  AppState appState;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<FirebaseUser> user;
-
-  List<String> _displayedPeople;
+  List<Friendship> _displayedFriendships;
 
   @override
   void initState() {
-    _displayedPeople = List<String>();
-
+    _displayedFriendships = List<Friendship>();
     super.initState();
+
   }
 
   @override
   Widget build(BuildContext context) {
+    appState = AppStateContainer.of(context).state;
     return Scaffold(
       appBar: new AppBar(
         elevation: 0.0,
@@ -69,15 +74,20 @@ class AddFriendsPageState extends State<AddFriendsPage>
   }
 
   List<Widget> buildSuggestionsList() {
-    return _displayedPeople.length > 0
-        ? _displayedPeople.map((userName) {
+    return _displayedFriendships.length > 0
+        ? _displayedFriendships.map((fs) {
             return new ListCard(
-              text: userName,
+              text: fs.friend.name,
               leadingIcon: new Icon(Icons.person),
-              trailingIcon: new IconButton(
-                icon: Icon(Icons.person_add),
-                onPressed: () => sendFriendInvitation() //TODO: invitee uid,
-              ),
+              trailingIcon: fs.friendshipStatus == FriendshipStatus.Strangers ? IconButton(
+                  icon: Icon(Icons.person_add),
+                  onPressed: () {
+                      sendFriendInvitation(fs.friend.uuid);
+                      setState(() {
+                      fs.friendshipStatus = FriendshipStatus.Pending; 
+                      });
+                    }
+                  ): null,
             );
           }).toList()
         : <Widget>[
@@ -92,19 +102,15 @@ class AddFriendsPageState extends State<AddFriendsPage>
           ];
   }
 
-  void sendFriendInvitation() async {
-    FirebaseUser currentUser = await _auth.currentUser();
-    Storage.sendFriendInvitation(currentUser.uid, null);
+  void sendFriendInvitation(String inviteeUID) async {
+    Storage.sendFriendInvitation(appState.user.uuid, inviteeUID);
   }
 
   void onSearchChanged(String input) {
-    if (input.length > 2) {
-      Storage.getUsersByDisplayNameWith(input).then( (names) {
-        setState(() {
-          _displayedPeople = names;
-        });
-      });
-    }
+    Storage.getFriendShipsByDisplayNameWith(input, appState.user.uuid).then( (friendships) {
+     setState(() {
+      _displayedFriendships  = friendships;
+     });
+    });
   }
-
 }
