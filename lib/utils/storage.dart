@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user.dart';
+import '../models/friendship.dart';
 
 
 class Storage {
@@ -81,7 +82,7 @@ class Storage {
       .collection('friendInvitation')
       .document()
       .setData({
-        'inviter': inviteeUID,
+        'inviter': inviterUID,
         'invitee': inviteeUID,
       });
     // for now, always return true
@@ -97,18 +98,45 @@ class Storage {
       .document(firebaseUser.uid)
       .get();
     
-    print('email: ${firebaseUser.email}, image: ${d['image']}, name: ${d['displayName']}');
-    return User(uuid: firebaseUser.uid, email: firebaseUser.email, image: d['image'], name: d['displayName']);
+    // print('email: ${firebaseUser.email}, image: ${d['image']}, name: ${d['displayName']}');
+    return User(uuid: firebaseUser.uid, email: firebaseUser.email, image: null, name: d['displayName']);
   }
-  
+
   /*
     Get all users with displayName matching keyWord (prefix only!).
   */
-  static Future<List<String>> getUsersByDisplayNameWith(String keyWord) async{
+  static Future<List<User>> getUsersByDisplayNameWith(String keyWord) async{
     QuerySnapshot q = await _store
       .collection('userDetails')
       .where('displayName', isEqualTo: keyWord,)
       .getDocuments();
-    return q.documents.map( (doc) { return doc['displayName']; }).cast<String>().toList();;
-  }  
+    return q.documents.map( (doc) { 
+      return User(
+        uuid: doc.documentID, // this is the same as the user UID
+        name: doc['displayName'],
+        // TODO: following are dummies
+        email: '',
+        image: '',
+      );
+    }).toList();
+  }
+
+  static Future<List<Friendship>> getFriendShipsByDisplayNameWith(String keyWord, String userUID) async {
+    List<User> users = await getUsersByDisplayNameWith(keyWord);
+    List<Future<Friendship>> fs = users.map( (user) async {
+      QuerySnapshot qs = await _store
+        .collection('friendInvitation')
+        .where('inviter', isEqualTo: userUID)
+        .where('invitee', isEqualTo: user.uuid)
+        .getDocuments();
+      FriendshipStatus status;
+      if (qs.documentChanges.length > 0) {
+        status = FriendshipStatus.Pending;
+      } else {
+        status = FriendshipStatus.Strangers;
+      }
+      return new Friendship(friend: user, friendshipStatus: status);
+    }).toList();
+    return await Future.wait(fs);
+  } 
 }
