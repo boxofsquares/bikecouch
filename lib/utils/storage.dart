@@ -30,23 +30,23 @@ class Storage {
     List<String> fuids = await getFriendsByUID(userUID);
     
     // make a list of all query futures
-    List<Future<QuerySnapshot>> futures = 
+    List<Future<DocumentSnapshot>> futures = 
       fuids
         .map( (fuid) {
           return _store
                     .collection('userDetails')
-                    .where('uuid', isEqualTo: fuid)
-                    .getDocuments();
+                    .document(fuid)
+                    .get();
         }).toList();
 
     // wait for all query futures to be resolved
-    List<QuerySnapshot> qs = await Future.wait(futures);
+    List<DocumentSnapshot> ds = await Future.wait(futures);
 
     // extract the dispayName for each user
-    return qs.map( (q) {
+    return ds.map( (q) {
       // NOTE: This might crash was not signed up properly 
       // - a.k.a. no userDetails entry
-      return q.documents.first['displayName'];
+      return q['displayName'];
     }).cast<String>().toList();             
   }
 
@@ -100,4 +100,15 @@ class Storage {
     print('email: ${firebaseUser.email}, image: ${d['image']}, name: ${d['displayName']}');
     return User(uuid: firebaseUser.uid, email: firebaseUser.email, image: d['image'], name: d['displayName']);
   }
+  
+  /*
+    Get all users with displayName matching keyWord (prefix only!).
+  */
+  static Future<List<String>> getUsersByDisplayNameWith(String keyWord) async{
+    QuerySnapshot q = await _store
+      .collection('userDetails')
+      .where('displayName', isEqualTo: keyWord,)
+      .getDocuments();
+    return q.documents.map( (doc) { return doc['displayName']; }).cast<String>().toList();;
+  }  
 }
