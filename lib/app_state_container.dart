@@ -48,13 +48,15 @@ class _AppStateContainerState extends State<AppStateContainer> {
     if (widget.state != null) {
       state = widget.state;
     } else {
-      state = new AppState.loading();
-      initSignInState();
+      state = AppState(
+        isLoading: true,
+      );
+      _initSignInState();
     }
   }
 
 
-  initSignInState() async {
+  _initSignInState() async {
 
     var user = await _auth.currentUser();
     if (user == null) {
