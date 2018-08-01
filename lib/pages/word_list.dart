@@ -71,6 +71,10 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
           IconButton(
             icon: Icon(Icons.shuffle),
             onPressed: shuffleWords,
+          ),
+          IconButton(
+            icon: Icon(Icons.person_add),
+            onPressed: () => Navigator.pushNamed(context, '/add_friends'),
           )
         ],
         elevation: 0.0,

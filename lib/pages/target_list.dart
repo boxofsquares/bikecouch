@@ -95,7 +95,7 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
             child: new ListCard(
               text: wp.asPascalCase,
               enabled: false,
-              icon: new Icon(Icons.person_outline),
+              leadingIcon: new Icon(Icons.person_outline),
             ),
             animation: placeholderAnimation,
           );
@@ -109,7 +109,7 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
             isSelected: _selectedTarget == friend,
             text: friend,
             onTap: selectTarget,
-            icon: new Icon(Icons.person),
+            leadingIcon: new Icon(Icons.person),
           );
         }).toList()
         :
