@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:english_words/english_words.dart';
+import 'dart:async';
 
 import '../components/list_card.dart';
 import '../components/pill_button.dart';
+import '../components/fade_animation_widget.dart';
 import '../utils/storage.dart';
 
 class TargetList extends StatefulWidget {
@@ -12,24 +15,31 @@ class TargetList extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    // TODO: implement createState
     return TargetListState();
   }
 }
 
-class TargetListState extends State<TargetList> {
+class TargetListState extends State<TargetList> with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<FirebaseUser> user;
   String _selectedTarget;
   List<String> _allFriends;
   List<String> displayedFriends;
+  bool _isLoading;
+
+  Animation placeholderAnimation;
+  AnimationController placeholderAnimationController;
 
   @override
   void initState() {
+    _isLoading = true;
     _allFriends = List<String>();
     displayedFriends = List<String>();
     _selectedTarget = '';
+    setupPlaceholderAnimation();
     getAllFriends();
+
+    
     super.initState();
   }
 
@@ -43,23 +53,22 @@ class TargetListState extends State<TargetList> {
       body: new Column(
         children: <Widget>[
           new Container(
-              child: new TextField(
-            autocorrect: false,
-            keyboardType: TextInputType.text,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              hintText: 'Start typing a friend\'s name...',
-              filled: true,
-              fillColor: Colors.grey[100],
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 16.00, horizontal: 8.00),
-              border: UnderlineInputBorder(
-                borderSide: BorderSide(
-                    style: BorderStyle.solid, color: Colors.grey[50]),
-                borderRadius: BorderRadius.circular(0.00),
+            decoration: new BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.grey[300],))),
+            child: new TextField(
+              autocorrect: false,
+              keyboardType: TextInputType.text,
+              onChanged: onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Start typing a friend\'s name...',
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 24.00, horizontal: 32.00),
+                border: InputBorder.none,
               ),
-            ),
-          )),
+            )
+          ),
           new Expanded(
             child: new ListView(
               children: buildFriendList(),
@@ -78,21 +87,39 @@ class TargetListState extends State<TargetList> {
   }
 
   List<Widget> buildFriendList() {
-    return displayedFriends.length > 0 ?
-      displayedFriends.map((friend) {
-        return new ListCard(
-          isSelected: _selectedTarget == friend,
-          text: friend,
-          onTap: selectTarget,
-        );
-      }).toList()
-      :
-      <Widget>[
-        new ListTile(
-          title: Text('No friends here :(', style: TextStyle(color: Colors.grey[400]), textAlign: TextAlign.center,),
-          contentPadding: EdgeInsets.all(18.00),
-        )
-      ];
+    if (_isLoading) {
+      placeholderAnimationController.forward();
+      List<Widget> dummies = generateWordPairs().take(3).map( (wp) {
+        return
+          new FadeTransitionWidget(
+            child: new ListCard(
+              text: wp.asPascalCase,
+              enabled: false,
+              icon: new Icon(Icons.person_outline),
+            ),
+            animation: placeholderAnimation,
+          );
+        }
+      ).toList();
+      return dummies;
+    } else {
+      return displayedFriends.length > 0 ?
+        displayedFriends.map((friend) {
+          return new ListCard(
+            isSelected: _selectedTarget == friend,
+            text: friend,
+            onTap: selectTarget,
+            icon: new Icon(Icons.person),
+          );
+        }).toList()
+        :
+        <Widget>[
+          new ListTile(
+            title: Text('No friends here :(', style: TextStyle(color: Colors.grey[400]), textAlign: TextAlign.center,),
+            contentPadding: EdgeInsets.all(18.00),
+          )
+        ];
+    }
   }
 
   void selectTarget(String targetName) {
@@ -107,7 +134,9 @@ class TargetListState extends State<TargetList> {
       setState(() {
         _allFriends = friends;
         displayedFriends = _allFriends;
+        _isLoading = false;
       });
+      placeholderAnimationController.dispose();
     });
   }
 
@@ -118,4 +147,25 @@ class TargetListState extends State<TargetList> {
       }).toList();
     });
   }
+
+  void setupPlaceholderAnimation() {
+     // Placeholder animation setup
+    placeholderAnimationController = new AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    final CurvedAnimation curve = CurvedAnimation(
+      parent: placeholderAnimationController,
+      curve: Curves.linear
+    );
+    placeholderAnimation = Tween(begin: 1.0, end: 0.2).animate(curve);
+    placeholderAnimation.addStatusListener( (status) {
+      if (status == AnimationStatus.completed) {
+        placeholderAnimationController.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        placeholderAnimationController.forward();
+      }
+    });
+  }
 }
+

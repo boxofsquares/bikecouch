@@ -14,6 +14,7 @@ import '../models/app_state.dart';
 import '../app_state_container.dart';
 import '../models/user.dart';
 
+import '../components/fade_animation_widget.dart';
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
 
@@ -28,17 +29,24 @@ class WordList extends StatefulWidget {
 /*
   Screen that lets the user choose from two a list of 10 words.
 */
-class _WordListState extends State<WordList> {
+class _WordListState extends State<WordList> with SingleTickerProviderStateMixin {
   AppState appState;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   List<String> _selectedWords = List<String>();
   List<String> _allWords = List<String>();
+  bool _isLoading;
+  bool _isOffline;
+  Animation<double> placeholderAnimation;
+  AnimationController placeholderAnimationController;
+
   var num;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
 
   @override
   void initState() {
+    _isOffline = false;
     shuffleWords();
+    setupPlaceholderAnimation();
     super.initState();
   }
 
@@ -68,7 +76,7 @@ class _WordListState extends State<WordList> {
         elevation: 0.0,
       ),
       body: new ListView(
-        children: createWordRows(),
+        children: createWordSuggestions(),
         padding: EdgeInsetsDirectional.only(bottom: 60.00),
       ),
       floatingActionButton: _selectedWords.length >= 2
@@ -81,15 +89,32 @@ class _WordListState extends State<WordList> {
     );
   }
 
-  List<ListCard> createWordRows() {
-    return _allWords.map((String word) {
-      final isSelected = _selectedWords.contains(word);
-      return ListCard(
-        onTap: _chooseWord,
-        isSelected: isSelected,
-        text: word,
-      );
-    }).toList();
+  List<Widget> createWordSuggestions() {
+    if (!_isOffline) {
+      return _allWords.map((String word) {
+        final isSelected = _selectedWords.contains(word);
+        ListCard w = new ListCard(
+          onTap: _chooseWord,
+          isSelected: isSelected,
+          text: word,
+          enabled: !_isLoading,
+        );
+        return _isLoading ?
+          new FadeTransitionWidget(
+            animation: placeholderAnimation,
+            child: w,
+          )
+          :
+          w;
+      }).toList();
+    } else {
+      return <Widget>[
+        new ListCard(
+          enabled: false,
+          text: "Please check your internet connection.",
+        ),
+      ];
+    }
   }
 
   void _chooseWord(word) {
@@ -116,28 +141,65 @@ class _WordListState extends State<WordList> {
 
   void shuffleWords() async {
     List<String> wordList;
+    placeholderAnimationController.forward();
+    DataMuse.datamuseFetchData().then((res) {
 
-    if (WORD_SOURCE == 0) {
-      wordList = nouns;
-    } else {
-      DataMuse.DataMuseResponse res = await DataMuse.datamuseFetchData();
-      wordList = res.words.where((word) {
+      var dmWordList = res.words.where((word) {
         return word.tags.length < 2 && word.tags.contains("n");
       })
       .map((word) {
         return word.word;
       }).toList();
-    }
+      _allWords.clear();
+      setState(() {
+        for (var i = 0; i < 10; i++) {
+          var index = num.nextInt(dmWordList.length);
+          _allWords.add(dmWordList[index]);
+        }
+        _isLoading = false;
+        _isOffline = false;
+      });
+      placeholderAnimationController.reset();
+    })
+    .catchError((e) {
+      setState(() {
+        _isLoading = false;
+        _isOffline = true;
+      });
+    });
+    
 
     num = Random(new DateTime.now().millisecondsSinceEpoch);
 
     setState(() {
+      _isLoading = true;
+      _isOffline = false;
       _selectedWords.clear();
       _allWords.clear();
 
       for (var i = 0; i < 10; i++) {
-        var index = num.nextInt(wordList.length);
-        _allWords.add(wordList[index]);
+        var index = num.nextInt(nouns.length);
+        _allWords.add(nouns[index]);
+      }
+    });
+  }
+
+  void setupPlaceholderAnimation() {
+     // Placeholder animation setup
+    placeholderAnimationController = new AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    final CurvedAnimation curve = CurvedAnimation(
+      parent: placeholderAnimationController,
+      curve: Curves.linear
+    );
+    placeholderAnimation = Tween(begin: 1.0, end: 0.2).animate(curve);
+    placeholderAnimation.addStatusListener( (status) {
+      if (status == AnimationStatus.completed) {
+        placeholderAnimationController.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        placeholderAnimationController.forward();
       }
     });
   }
