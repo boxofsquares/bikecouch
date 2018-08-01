@@ -41,12 +41,13 @@ class DataMuseResponse {
 
 Future<DataMuseResponse> datamuseFetchData() async {
   // hard coded to look for kitchen related words for now
-  final response = await http.get('https://api.datamuse.com/words?topics=kitchen&md=pd&max=300');
+  final response = await http
+    .get('https://api.datamuse.com/words?topics=kitchen&md=pd&max=300')
+    .timeout(new Duration(seconds: 1));
 
   if (response.statusCode == 200) {
     return DataMuseResponse.fromJSON(json.decode(response.body));
   } else {
     throw Exception('Failed fetching DataMuse data.');
   }
-
 }
