@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:english_words/english_words.dart';
-import 'dart:async';
 import 'dart:math';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,13 +8,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Custom Packages
 import '../components/list_card.dart';
 import '../utils/datamuse.dart' as DataMuse;
+import '../utils/storage.dart';
 import 'target_list.dart';
 import '../components/pill_button.dart';
 
 import '../models/app_state.dart';
 import '../app_state_container.dart';
-import '../models/user.dart';
-
+import '../models/challenge.dart';
 import '../components/fade_animation_widget.dart';
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
@@ -34,20 +33,24 @@ class WordList extends StatefulWidget {
 class _WordListState extends State<WordList> with SingleTickerProviderStateMixin {
   AppState appState;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   List<String> _selectedWords = List<String>();
   List<String> _allWords = List<String>();
+  List<Challenge> _allPendingChallenges = List<Challenge>();
   bool _isLoading;
   bool _isOffline;
-  Animation<double> placeholderAnimation;
-  AnimationController placeholderAnimationController;
-
+  int _currentTabIndex;
   var num;
 
+  Animation<double> placeholderAnimation;
+  AnimationController placeholderAnimationController;
 
   @override
   void initState() {
     _isOffline = false;
+    _currentTabIndex = 0;
     shuffleWords();
+    getPendingChallenges();
     setupPlaceholderAnimation();
     super.initState();
   }
@@ -57,19 +60,15 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
     var container = AppStateContainer.of(context);
     appState = container.state;
 
+    
+    Widget newChallenge =  new ListView(
+      children: createWordSuggestions(),
+      padding: EdgeInsetsDirectional.only(bottom: 60.00),
+    );
 
-    // making platform specific ui changes soon
-    // Widget body;
-    // if (Platform.isAndroid) {
-    //   body = ListView(
-    //     children: createWordSuggestions(),
-    //     padding: EdgeInsetsDirectional.only(bottom: 60.00)
-    //   );
-    // } else if (Platform.isIOS) {
-    //   body = CupertinoRefreshControl(
-        
-    //   );
-    // }
+    Widget pendingChallenges = new ListView(
+      children: buildPendingChallenges(),
+    );
 
     return Scaffold(
       appBar: new AppBar(
@@ -86,8 +85,11 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
         ),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.shuffle),
-            onPressed: shuffleWords,
+            icon: _currentTabIndex == 0 ?
+              Icon(Icons.shuffle) :
+              Icon(Icons.refresh),
+            onPressed: _currentTabIndex == 0 ? 
+              shuffleWords : getPendingChallenges,
           ),
           IconButton(
             icon: Icon(Icons.person_add),
@@ -96,17 +98,28 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
         ],
         elevation: 0.0,
       ),
-      body: ListView(
-        children: createWordSuggestions(),
-        padding: EdgeInsetsDirectional.only(bottom: 60.00),
-      ),
-      floatingActionButton: _selectedWords.length >= 2
+      body: _currentTabIndex == 0 ? newChallenge : pendingChallenges,
+      floatingActionButton: _currentTabIndex == 0 &&_selectedWords.length >= 2
           ? PillButton(
             text: "Choose your target!",
             onTap: setChallenge,
           )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.format_list_numbered),
+            title: Text('New Challenge'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.question_answer),
+            title: Text('Your Challenges'),
+          )
+        ],
+        onTap: (int index) => _handleNavigationBarTab(index),
+        currentIndex: _currentTabIndex,
+      ),
     );
   }
 
@@ -157,11 +170,16 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
           challenge: _selectedWords,
         ),
       )
-    );
+    ).then( (reset) {
+      if (reset == null) {
+        return;
+      } else if (reset == true) {
+        shuffleWords();
+      }
+    });
   }
 
   void shuffleWords() async {
-    List<String> wordList;
     placeholderAnimationController.forward();
     DataMuse.datamuseFetchData().then((res) {
 
@@ -222,6 +240,45 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
       } else if (status == AnimationStatus.dismissed) {
         placeholderAnimationController.forward();
       }
+    });
+  }
+
+  List<Widget> buildPendingChallenges() {
+    return _allPendingChallenges
+      .map((challenge) {
+        return ListCard(
+          text: challenge.wordPair.join('  '),
+          enabled: true,
+          leadingIcon: Icon(Icons.send),
+          trailingIcon: Text(challenge.challenger.name),
+        );
+      }).toList();
+  }
+
+  void getPendingChallenges() async {
+    // NOTE: Pulling the user idea from _auth instead of AppState because
+    // Appstate is not set before the first widget build.
+    Storage
+      .getPendingChallengesFor((await _auth.currentUser()).uid)
+      .then((challenges) {
+        setState(() {
+          _allPendingChallenges = challenges;
+        });
+      });
+  }
+
+  void _handleNavigationBarTab(int index) {
+    setState(() {
+      switch(index) {
+        case 0: 
+          // TODO: Something to do here..
+          break;
+        case 1: 
+          //TODO: Somethine else to do here...
+
+          break;
+      }
+      _currentTabIndex = index;
     });
   }
 }

@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user.dart';
 import '../models/friendship.dart';
 import '../models/invitation.dart';
-
+import '../models/challenge.dart';
 
 class Storage {
   static final Firestore _store = Firestore.instance;
@@ -18,7 +18,7 @@ class Storage {
     return Future.value(true);
   }
 
-  static Future<List<String>> getFriendsByUID(String userUID) async {
+  static Future<List<String>> getFriendsAsUID(String userUID) async {
     QuerySnapshot q = await _store
                               .collection('friends')
                               .where('uuid', isEqualTo: userUID)
@@ -27,29 +27,23 @@ class Storage {
     return q.documents.map( (doc) { return doc['fuid']; }).cast<String>().toList();;
   }
 
-  static Future<List<String>> getFriendsByDisplayName(String userUID) async {
+  static Future<List<User>> getFriendsAsUsers(String userUID) async {
     // collect all friends uids
-    List<String> fuids = await getFriendsByUID(userUID);
+    List<String> fuids = await getFriendsAsUID(userUID);
     
     // make a list of all query futures
-    List<Future<DocumentSnapshot>> futures = 
+    List<Future<User>> futures = 
       fuids
-        .map( (fuid) {
-          return _store
+        .map( (fuid) async {
+          DocumentSnapshot ds = await _store
                     .collection('userDetails')
                     .document(fuid)
                     .get();
+          return User.fromDocument(ds);
         }).toList();
 
     // wait for all query futures to be resolved
-    List<DocumentSnapshot> ds = await Future.wait(futures);
-
-    // extract the dispayName for each user
-    return ds.map( (q) {
-      // NOTE: This might crash was not signed up properly 
-      // - a.k.a. no userDetails entry
-      return q['displayName'];
-    }).cast<String>().toList();             
+    return await Future.wait(futures);            
   }
 
   /*
@@ -121,6 +115,8 @@ class Storage {
       .collection('friendInvitation')
       .document(invitationUID)
       .delete();
+    
+    return Future.value(true);
   }
 
 
@@ -150,14 +146,8 @@ class Storage {
       .collection('userDetails')
       .where('displayName', isEqualTo: keyWord,)
       .getDocuments();
-    return q.documents.map( (doc) { 
-      return User(
-        uuid: doc.documentID, // this is the same as the user UID
-        name: doc['displayName'],
-        // TODO: following are dummies
-        email: '',
-        image: '',
-      );
+    return q.documents.map( (ds) { 
+      return User.fromDocument(ds);
     }).toList();
   }
 
@@ -191,14 +181,57 @@ class Storage {
       .getDocuments();
     
     List<Future<Invitation>> futures = q.documents.map((document) async {
-      DocumentSnapshot s = await _store
+      DocumentSnapshot ds = await _store
         .collection('userDetails')
         .document(document['inviter'])
         .get();
         
-        return Invitation(user: User(uuid: s.data['uuid'], email: '', name: s.data['displayName'], image: ''), invitationUID: document.documentID);
+        return Invitation(
+          user: User.fromDocument(ds), 
+          invitationUID: document.documentID
+        );
     }).toList();
 
     return await Future.wait(futures); 
+  }
+
+  static Future<List<Challenge>> getPendingChallengesFor(String userUID) async {
+    QuerySnapshot q = await _store
+      .collection('challenges')
+      .where('target', isEqualTo: userUID)
+      .getDocuments();
+    
+    List<Future<Challenge>> futures = q.documents.map((doc) async { 
+      Set<String> set = new Set<String>();
+      set.add(doc.data['wordpair'][0]);
+      set.add(doc.data['wordpair'][1]);
+
+      DocumentSnapshot ds = await _store
+        .collection('userDetails')
+        .document(doc.data['challenger'])
+        .get();
+
+      User challenger = User.fromDocument(ds);
+
+      return new Challenge(
+        uid: doc.documentID,
+        challenger: challenger,
+        wordPair: set,
+      );
+    }).toList(); 
+
+    return await Future.wait(futures);
+  }
+
+  static Future<bool> sendChallengeFromTo(String userUID, String targetUID, List<String> wordPair) {
+    _store
+      .collection('challenges')
+      .document()
+      .setData({
+        'challenger': userUID,
+        'target': targetUID,
+        'wordpair': wordPair.toList(),
+      });
+    return Future.value(true);
   }
 }
