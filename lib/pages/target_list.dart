@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:english_words/english_words.dart';
-import 'dart:async';
 
 import '../components/list_card.dart';
 import '../components/pill_button.dart';
 import '../components/fade_animation_widget.dart';
 import '../utils/storage.dart';
+import '../models/user.dart';
+
+import '../models/app_state.dart';
+import '../app_state_container.dart';
 
 class TargetList extends StatefulWidget {
   final List<String> challenge;
@@ -20,11 +23,12 @@ class TargetList extends StatefulWidget {
 }
 
 class TargetListState extends State<TargetList> with SingleTickerProviderStateMixin {
+  AppState appState;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   List<FirebaseUser> user;
-  String _selectedTarget;
-  List<String> _allFriends;
-  List<String> displayedFriends;
+  String _targetUID;
+  List<User> _allFriends;
+  List<User> _displayedFriends;
   bool _isLoading;
 
   Animation placeholderAnimation;
@@ -33,9 +37,9 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
   @override
   void initState() {
     _isLoading = true;
-    _allFriends = List<String>();
-    displayedFriends = List<String>();
-    _selectedTarget = '';
+    _allFriends = List<User>();
+    _displayedFriends = List<User>();
+    _targetUID = '';
     setupPlaceholderAnimation();
     getAllFriends();
 
@@ -45,6 +49,9 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
+    var container = AppStateContainer.of(context);
+    appState = container.state;
+
     return Scaffold(
       appBar: new AppBar(
         elevation: 0.0,
@@ -76,10 +83,10 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
           ),
         ],
       ),
-      floatingActionButton: _selectedTarget != ''
+      floatingActionButton: _targetUID != ''
           ? PillButton(
               text: 'Send the challenge!',
-              onTap: () => null,
+              onTap: () => sendChallenge(_targetUID),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -103,12 +110,13 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
       ).toList();
       return dummies;
     } else {
-      return displayedFriends.length > 0 ?
-        displayedFriends.map((friend) {
+      return _displayedFriends.length > 0 ?
+        _displayedFriends.map((friend) {
           return new ListCard(
-            isSelected: _selectedTarget == friend,
-            text: friend,
+            isSelected: _targetUID == friend.uuid,
+            text: friend.name,
             onTap: selectTarget,
+            onTapArg: friend.uuid,
             leadingIcon: new Icon(Icons.person),
           );
         }).toList()
@@ -122,18 +130,18 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
     }
   }
 
-  void selectTarget(String targetName) {
+  void selectTarget(String friendUID) {
     setState(() {
-      _selectedTarget = _selectedTarget == targetName ? '' : targetName;
+      _targetUID = _targetUID == friendUID ? '' : friendUID;
     });
   }
 
   void getAllFriends() async {
     FirebaseUser currentUser = await _auth.currentUser();
-    Storage.getFriendsByDisplayName(currentUser.uid).then((friends) {
+    Storage.getFriendsAsUsers(currentUser.uid).then((friends) {
       setState(() {
         _allFriends = friends;
-        displayedFriends = _allFriends;
+        _displayedFriends = _allFriends;
         _isLoading = false;
       });
       placeholderAnimationController.dispose();
@@ -142,10 +150,15 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
 
   void onSearchChanged(String input) {
     setState(() {
-      displayedFriends = _allFriends.where((friend) {
-        return friend.indexOf(input) > -1;
+      _displayedFriends = _allFriends.where((friend) {
+        return friend.name.indexOf(input) > -1;
       }).toList();
     });
+  }
+
+  void sendChallenge(String targetUID) {
+    Storage.sendChallengeFromTo(appState.user.uuid, targetUID, widget.challenge);
+    Navigator.pop(context, true);
   }
 
   void setupPlaceholderAnimation() {

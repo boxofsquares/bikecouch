@@ -9,6 +9,7 @@ typedef void CardTapped(String text);
 class ListCard extends StatelessWidget {
   final String text;
   final CardTapped onTap;
+  final String onTapArg;
   final bool enabled;
   final bool isSelected;
   final Widget leadingIcon;
@@ -18,6 +19,7 @@ class ListCard extends StatelessWidget {
     Key key,
     @required this.text,
     this.onTap,
+    this.onTapArg,
     this.isSelected = false,
     this.enabled = true,
     this.leadingIcon,
@@ -32,7 +34,7 @@ class ListCard extends StatelessWidget {
             fontWeight: FontWeight.bold, fontSize: isSelected ? 24.00 : 18.00),
         textAlign: leadingIcon == null ? TextAlign.center : TextAlign.left,
       ),
-      onTap: () => onTap(text),
+      onTap: () => onTap(onTapArg == null ? text : onTapArg),
       selected: isSelected,
       contentPadding: EdgeInsets.symmetric(vertical: 16.00, horizontal: 32.00),
       enabled: enabled,
