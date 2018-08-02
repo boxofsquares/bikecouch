@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:async';
 import 'dart:math';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Custom Packages
@@ -55,6 +57,20 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
     var container = AppStateContainer.of(context);
     appState = container.state;
 
+
+    // making platform specific ui changes soon
+    // Widget body;
+    // if (Platform.isAndroid) {
+    //   body = ListView(
+    //     children: createWordSuggestions(),
+    //     padding: EdgeInsetsDirectional.only(bottom: 60.00)
+    //   );
+    // } else if (Platform.isIOS) {
+    //   body = CupertinoRefreshControl(
+        
+    //   );
+    // }
+
     return Scaffold(
       appBar: new AppBar(
         title: new Text('${appState.user.name}'), //${appState.user.name}
@@ -79,7 +95,7 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
         ],
         elevation: 0.0,
       ),
-      body: new ListView(
+      body: ListView(
         children: createWordSuggestions(),
         padding: EdgeInsetsDirectional.only(bottom: 60.00),
       ),

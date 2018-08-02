@@ -109,7 +109,7 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
             isSelected: _selectedTarget == friend,
             text: friend,
             onTap: selectTarget,
-            leadingIcon: new Icon(Icons.person),
+            leadingIcon: new CircleAvatar(child: Text(friend.substring(0,1))),
           );
         }).toList()
         :

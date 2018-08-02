@@ -67,7 +67,7 @@ class AddFriendsPageState extends State<AddFriendsPage>
         ? _pendingPeople.map((invitation) {
             return new ListCard(
               text: invitation.user.name,
-              leadingIcon: new Icon(Icons.person),
+              leadingIcon: new CircleAvatar(child: Text(invitation.user.name.substring(0,1))),
               // trailingIcon: Row(
               //   children: <Widget>[
               //     GestureDetector(
@@ -173,7 +173,7 @@ class AddFriendsPageState extends State<AddFriendsPage>
         ? _displayedFriendships.map((fs) {
             return new ListCard(
               text: fs.friend.name,
-              leadingIcon: new Icon(Icons.person),
+              leadingIcon: new CircleAvatar(child: Text(fs.friend.name.substring(0,1))),
               trailingIcon: fs.friendshipStatus == FriendshipStatus.Strangers ? IconButton(
                   icon: Icon(Icons.person_add),
                   onPressed: () {
