@@ -133,9 +133,13 @@ class Storage {
       .collection('userDetails')
       .document(firebaseUser.uid)
       .get();
-    
-    // print('email: ${firebaseUser.email}, image: ${d['image']}, name: ${d['displayName']}');
-    return User(uuid: firebaseUser.uid, email: firebaseUser.email, image: null, name: d['displayName']);
+
+    // TODO: sean please delete this soon, just for debugging
+    if (d.data == null) {
+      print('THIS SHOULD NEVER HAPPEN!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      return User(uuid: '', email: '', image: '', name: 'MISTAKE');
+    }
+    return User(uuid: firebaseUser.uid, email: firebaseUser.email, image: '', name: d['displayName']);
   }
 
   /*

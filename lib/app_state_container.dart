@@ -48,9 +48,7 @@ class _AppStateContainerState extends State<AppStateContainer> {
     if (widget.state != null) {
       state = widget.state;
     } else {
-      state = AppState(
-        isLoading: true,
-      );
+      state = AppState.loading();
       _initSignInState();
     }
   }
@@ -60,16 +58,16 @@ class _AppStateContainerState extends State<AppStateContainer> {
 
     var user = await _auth.currentUser();
     if (user == null) {
-      setState(() {
-              state.isLoading = false;
-              state.isSignedIn = false;
-            });
+      // setState(() {
+      //         state.isSignedIn = false;
+      //       });
+      setState(() => state.isLoading = false);
     } else {
       Storage.getUserDetails(user)
         .then((user) {
           setState(() {
+              // state.isSignedIn = true;
               state.isLoading = false;
-              state.isSignedIn = true;
               state.user = user;
             });
         })
@@ -88,14 +86,14 @@ class _AppStateContainerState extends State<AppStateContainer> {
     print(user.name);
   }
 
-  isLoading(bool isLoading) {
-    setState(() => state.isLoading = isLoading);
-    print('setting state to isLaoding: $isLoading');
-  }
+  // isLoading(bool isLoading) {
+  //   setState(() => state.isLoading = isLoading);
+  //   print('setting state to isLoading: $isLoading');
+  // }
 
-  isSignedIn(bool isSignedIn) {
-    setState(() => state.isSignedIn = isSignedIn);
-  }
+  // isSignedIn(bool isSignedIn) {
+  //   setState(() => state.isSignedIn = isSignedIn);
+  // }
 
 
 

@@ -80,7 +80,8 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
           icon: Icon(Icons.exit_to_app),
           onPressed: () { 
             _auth.signOut();
-            container.isSignedIn(false);
+            container.setUser(null);
+            // container.isSignedIn(false);
           }
         ),
         actions: <Widget>[

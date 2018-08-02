@@ -5,6 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../utils/storage.dart';
 
+import '../models/app_state.dart';
+import '../models/user.dart';
+import '../app_state_container.dart';
+
 
 class RegisterPage extends StatefulWidget {
   static String tag = 'RegisterPage';
@@ -14,7 +18,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-
+  AppState appState;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
@@ -44,26 +48,29 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Future<FirebaseUser> _handleRegister() async {
-    setState(() => _isLoading = true);
+  Future<User> _handleRegister() async {
+    // setState(() => _isLoading = true);
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
     Storage.registerUserDetails(user.uid, _name);
-    setState(() => _isLoading = false);
-    return user;
+    User userDetails = User(uuid: user.uid, email: user.email, name: _name, image: '');
+    // setState(() => _isLoading = false);
+    return userDetails;
   }
 
-    FirebaseUser _handleRegisterWrapper() {
-    FirebaseUser user;
-    setState(() => _isLoading = true);
-    _handleRegister()
-      .then((v) => Navigator.pop(context))
-      .catchError((e){
-        print('caught error');
-        setState(() => _isLoading = false);
-        _makeSnackBar(e.details);
-      });
-    return user;
-  }
+  //   FirebaseUser _handleRegisterWrapper() {
+  //   FirebaseUser user;
+  //   setState(() => _isLoading = true);
+  //   _handleRegister()
+  //     .then((v) {
+  //       Navigator.pop(context);
+  //     }) 
+  //     .catchError((e){
+  //       print('caught error');
+  //       setState(() => _isLoading = false);
+  //       _makeSnackBar(e.details);
+  //     });
+  //   return user;
+  // }
 
   _makeSnackBar(String message) {
     final snackbar = SnackBar(
@@ -75,6 +82,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    var container = AppStateContainer.of(context);
+    appState = container.state;
 
     final email = TextFormField(
       autocorrect: false,
@@ -142,8 +151,19 @@ class _RegisterPageState extends State<RegisterPage> {
         if (_requiredFieldsFilled) {
           final form = _formKey.currentState;
           if (form.validate()) {
+            setState(() => _isLoading = true);
             form.save();
-            _handleRegisterWrapper();
+            // _handleRegisterWrapper();
+            _handleRegister()
+              .then((userDetails) {
+                container.setUser(userDetails);
+                // container.isSignedIn(true);
+                Navigator.pop(context);
+              })
+              .catchError((e) {
+                setState(() => _isLoading = false);
+                _makeSnackBar(e.details);
+              });
           }
         } else {
           print('Missing required fields');

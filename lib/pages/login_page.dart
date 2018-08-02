@@ -27,8 +27,8 @@ class _LoginPageState extends State<LoginPage> {
   final _emailFieldController = TextEditingController();
   final _passFieldController = TextEditingController();
   bool _requiredFieldsFilled = false;
-  // bool _isLoading = false;
   AppState appState;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -112,16 +112,18 @@ class _LoginPageState extends State<LoginPage> {
   final submit = GestureDetector(
       onTap: (){
         if (_requiredFieldsFilled) {
-          container.isLoading(true);
+          // container.isLoading(true);
+          setState(() => _isLoading = true);
           final form = _formKey.currentState;
           form.save();
           _handleLogin()
             .then((user) {
               container.setUser(user);
-              container.isSignedIn(true);
+              // container.isSignedIn(true);
             })
             .catchError((e) {
-              container.isLoading(false);
+              // container.isLoading(false);
+              setState(() => _isLoading = false);
               _makeSnackBar(e.details);
             });
         } else {
@@ -135,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(7.0)
         ),
         child: Center (
-          child: appState.isLoading ? CircularProgressIndicator(
+          child: _isLoading ? CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColorLight),
           ) : Text(
             'Log In',

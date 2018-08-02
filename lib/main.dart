@@ -34,14 +34,30 @@ class MyApp extends StatelessWidget {
   // }
 
   Widget _handleAuthFlowTwo() {
-    if (appState == null) {
-      return Scaffold();
+    // if (appState == null || appState.isSignedIn == null) {
+    //   return Scaffold(
+    //     appBar: AppBar(elevation: 0.0,),
+    //   );
+    // } else {
+    //   if (appState.user != null) {
+    //     return WordList();
+    //   } else {
+    //     return LoginPage();
+    //   }
+    // }
+    if (appState.isLoading) {
+      // temp splash page
+      return Scaffold(
+        appBar: AppBar(elevation: 0.0),
+        body: Center(
+          // child: CircularProgressIndicator(),
+          child: BottomNavigationBar(items: []),
+        ),
+      );
+    } else if (!appState.isLoading && appState.user == null) {
+      return LoginPage();
     } else {
-      if (appState.isSignedIn) {
-        return WordList();
-      } else {
-        return LoginPage();
-      }
+      return WordList();
     }
   }
 

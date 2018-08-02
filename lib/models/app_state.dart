@@ -2,16 +2,16 @@ import 'user.dart';
 
 class AppState {
   // Your app will use this to know when to display loading spinners.
-  bool isLoading;
-  bool isSignedIn;
+  // bool isSignedIn;
   User user;
+  bool isLoading;
 
   // Constructor
   AppState({
+    // this.isSignedIn,
     this.isLoading = false,
-    this.isSignedIn,
     this.user,
   });
 
-  factory AppState.loading() => new AppState(isLoading: true);
+  factory AppState.loading() => AppState(isLoading: true);
 }
