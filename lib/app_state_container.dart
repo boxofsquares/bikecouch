@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
+
 
 import 'models/app_state.dart';
 import 'models/user.dart';
@@ -53,6 +55,8 @@ class _AppStateContainerState extends State<AppStateContainer> {
     }
   }
 
+
+  
 
   _initSignInState() async {
 

@@ -4,6 +4,7 @@ import 'package:english_words/english_words.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:camera/camera.dart';
 
 // Custom Packages
 import '../components/list_card.dart';
@@ -16,6 +17,9 @@ import '../models/app_state.dart';
 import '../app_state_container.dart';
 import '../models/challenge.dart';
 import '../components/fade_animation_widget.dart';
+
+import '../pages/camera_page.dart'; //adding page because want to navigate by passing variable and don't know how to do that with route
+
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
 
@@ -243,6 +247,20 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
     });
   }
 
+  _launchCamera() {
+    print('hey');
+    availableCameras()
+      .then((cameras) {
+        print(cameras);
+        Navigator.of(context).push(
+          new MaterialPageRoute(
+            builder: (context) => CameraPage(cameras: cameras),
+          )
+        );
+      })
+      .catchError((e) => print('camera error'));
+  }
+
   List<Widget> buildPendingChallenges() {
     return _allPendingChallenges
       .map((challenge) {
@@ -251,6 +269,7 @@ class _WordListState extends State<WordList> with SingleTickerProviderStateMixin
           enabled: true,
           leadingIcon: Icon(Icons.send),
           trailingIcon: Text(challenge.challenger.name),
+          onTap: ((s) => _launchCamera()),
         );
       }).toList();
   }

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/word_list.dart';
 import 'pages/add_friends_page.dart';
+import 'pages/test_camera.dart';
 
 import 'models/user.dart';
 import 'app_state_container.dart';
@@ -58,6 +60,7 @@ class MyApp extends StatelessWidget {
       return LoginPage();
     } else {
       return WordList();
+      // return TestCamera();
     }
   }
 
