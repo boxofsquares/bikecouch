@@ -23,9 +23,13 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   CameraController controller;
   String imagePath;
+  bool _isLoading;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
 
   @override
   void initState() {
+    _isLoading = false;
     super.initState();
     controller = new CameraController(widget.cameras[0], ResolutionPreset.high);
     controller.initialize().then((_) {
@@ -45,6 +49,7 @@ class _CameraPageState extends State<CameraPage> {
   _uploadPhoto(String filePath) async {
     String url = await Bucket.uploadFile(filePath);
     VisionResponse vs = await ComputerVision.annotateImage(url);
+    setState(() => _isLoading = false);
     Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => TestAnnotations(
                 vs: vs,
@@ -53,7 +58,15 @@ class _CameraPageState extends State<CameraPage> {
     );
   }
 
+  _makeSnackBar(String message) {
+    final snackbar = SnackBar(
+      content: Text(message)
+    );
+    _scaffoldKey.currentState.showSnackBar(snackbar);
+  }
+
   _takePhoto() {
+    setState(() => _isLoading = true);
     _takePhotoWrapper()
       .then((filePath) {
         if (mounted) {
@@ -64,9 +77,11 @@ class _CameraPageState extends State<CameraPage> {
           print('image saved to $filePath');
         }
       })
-      .catchError((e) => print(e));
-
-
+      .catchError((e) => setState(() {
+        _isLoading = false;
+        _makeSnackBar(e);
+      })
+      );
   }
 
   Future<String> _takePhotoWrapper() async {
@@ -100,10 +115,20 @@ class _CameraPageState extends State<CameraPage> {
       return new Container();
     }
     return Scaffold(
-      body: AspectRatio(
-        aspectRatio:
-        controller.value.aspectRatio,
-        child: CameraPreview(controller)),
+      key: _scaffoldKey, 
+      body: Stack(
+        children: <Widget>[
+          AspectRatio(
+            aspectRatio:
+            controller.value.aspectRatio,
+            child: CameraPreview(controller)
+          ),
+          _isLoading ? Center(
+            child: CircularProgressIndicator(),
+          ) : Text('')
+        ],
+        
+      ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.camera_alt),
         onPressed: () => _takePhoto(),
