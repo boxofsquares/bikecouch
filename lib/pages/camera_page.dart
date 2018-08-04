@@ -6,6 +6,9 @@ import 'dart:async';
 import 'dart:io';
 
 import '../utils/bucket.dart';
+import '../utils/vision.dart';
+
+import '../pages/test_annotations.dart';
 
 
 
@@ -39,12 +42,23 @@ class _CameraPageState extends State<CameraPage> {
     super.dispose();
   }
 
+  _uploadPhoto(String filePath) async {
+    String url = await Bucket.uploadFile(filePath);
+    VisionResponse vs = await ComputerVision.annotateImage(url);
+    Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => TestAnnotations(
+                vs: vs,
+              ),
+        )
+    );
+  }
+
   _takePhoto() {
     _takePhotoWrapper()
       .then((filePath) {
         if (mounted) {
           // setState(() => imagePath = filePath);
-          Bucket.uploadFile(filePath);
+          _uploadPhoto(filePath);
         }
         if (filePath != null) {
           print('image saved to $filePath');

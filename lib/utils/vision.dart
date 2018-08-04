@@ -3,11 +3,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+
 class ComputerVision {
-  static String _accessToken = jsonDecode(File('./creds.json').readAsStringSync())['google-api-key'];
+  static String _accessToken;
   static String _visionEndpoint = 'https://vision.googleapis.com//v1p3beta1/images:annotate';
 
+  static Future<String> loadAsset() async {
+    return await rootBundle.loadString('creds.json');
+  }
+
+
   static Future<VisionResponse> annotateImage(String imageUri) async {
+    _accessToken = jsonDecode(await loadAsset())['google-api-key'];
+
     http.Response res = await http
         .post(_visionEndpoint + '?key=$_accessToken',
           body: _buildRequestString(imageUri),
