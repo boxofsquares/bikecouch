@@ -8,7 +8,6 @@ import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/word_list.dart';
 import 'pages/add_friends_page.dart';
-import 'pages/test_camera.dart';
 
 import 'models/user.dart';
 import 'app_state_container.dart';

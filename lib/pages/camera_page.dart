@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:io';
 
+import '../utils/bucket.dart';
+
 
 
 class CameraPage extends StatefulWidget {
@@ -41,7 +43,8 @@ class _CameraPageState extends State<CameraPage> {
     _takePhotoWrapper()
       .then((filePath) {
         if (mounted) {
-          setState(() => imagePath = filePath);
+          // setState(() => imagePath = filePath);
+          Bucket.uploadFile(filePath);
         }
         if (filePath != null) {
           print('image saved to $filePath');
@@ -88,6 +91,7 @@ class _CameraPageState extends State<CameraPage> {
         controller.value.aspectRatio,
         child: CameraPreview(controller)),
       floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.camera_alt),
         onPressed: () => _takePhoto(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
