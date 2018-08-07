@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:english_words/english_words.dart';
 import 'dart:math';
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:camera/camera.dart';
 
@@ -19,7 +18,6 @@ import '../models/challenge.dart';
 import '../components/fade_animation_widget.dart';
 
 import '../pages/camera_page.dart'; //adding page because want to navigate by passing variable and don't know how to do that with route
-import '../utils/vision.dart';
 
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
@@ -131,7 +129,7 @@ class _WordListState extends State<WordList>
       return _allWords.map((String word) {
         final isSelected = _selectedWords.contains(word);
         ListCard w = new ListCard(
-          onTap: _chooseWord,
+          onTap: () => _chooseWord(word),
           isSelected: isSelected,
           text: word,
           enabled: !_isLoading,
@@ -240,16 +238,16 @@ class _WordListState extends State<WordList>
     });
   }
 
-  _launchCamera() {
+  void _launchCamera(Set<String> wordPair) {
     print('hey');
     availableCameras()
       .then((cameras) {
         print(cameras);
         Navigator.of(context).push(
           new MaterialPageRoute(
-            builder: (context) => CameraPage(cameras: cameras),
-          )
-        );
+            // NOTE: These are placeholder challenge words for testing [cup, plate].
+            builder: (context) => CameraPage(cameras: cameras, challengeWords: ['cup', 'plate'].toSet()),
+          ));
       })
       .catchError((e) => print('camera error'));
   }
@@ -262,7 +260,7 @@ class _WordListState extends State<WordList>
           enabled: true,
           leadingIcon: Icon(Icons.send),
           trailingIcon: Text(challenge.challenger.name),
-          onTap: ((s) => _launchCamera()),
+          onTap: () => _launchCamera(challenge.wordPair),
         );
       }).toList();
   }

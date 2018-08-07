@@ -8,13 +8,12 @@ import 'dart:io';
 import '../utils/bucket.dart';
 import '../utils/vision.dart';
 
-import '../pages/test_annotations.dart';
-
-
+import '../pages/challenge_results_page.dart';
 
 class CameraPage extends StatefulWidget {
-  CameraPage({this.cameras});
+  CameraPage({this.cameras, this.challengeWords});
   final List<CameraDescription> cameras;
+  final Set<String> challengeWords;
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -47,15 +46,23 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   _uploadPhoto(String filePath) async {
-    String url = await Bucket.uploadFile(filePath);
-    VisionResponse vs = await ComputerVision.annotateImage(url);
-    setState(() => _isLoading = false);
+    // String url = await Bucket.uploadFile(filePath);
+    String b64 = Bucket.imageToBase64String(filePath);
+    VisionResponse vs = await ComputerVision.annotateImage(
+        b64, AnnotationRequestMode.Base64String);
+    bool success = vs.annotations.any((annotation) {
+      return widget.challengeWords.any((word) {
+        return annotation.description == word;
+      });
+    });
     Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => TestAnnotations(
-                vs: vs,
+          builder: (context) => ChallengeResults(
+                success: success,
               ),
-        )
-    );
+        ));
+    // free resources
+    setState(() => _isLoading = false);
+    File(filePath).delete();
   }
 
   _makeSnackBar(String message) {

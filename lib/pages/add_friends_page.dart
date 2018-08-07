@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:english_words/english_words.dart';
 
 // Custom Packages
 import '../components/list_card.dart';
-import '../components/fade_animation_widget.dart';
 import '../utils/storage.dart';
-import '../models/user.dart';
 import '../models/friendship.dart';
 import '../models/app_state.dart';
 import '../app_state_container.dart';
 
-import '../app_state_container.dart';
-import '../models/app_state.dart';
-import '../models/user.dart';
 import '../models/invitation.dart';
 
 class AddFriendsPage extends StatefulWidget {

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
-import 'package:firebase_auth/firebase_auth.dart';
-
+// Pages
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/word_list.dart';
 import 'pages/add_friends_page.dart';
 
-import 'models/user.dart';
 import 'app_state_container.dart';
 import 'models/app_state.dart';
 
@@ -52,7 +49,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(elevation: 0.0),
         body: Center(
           // child: CircularProgressIndicator(),
-          child: BottomNavigationBar(items: []),
+          child: new Container(),
         ),
       );
     } else if (!appState.isLoading && appState.user == null) {
@@ -85,6 +82,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/add_friends': (context) => AddFriendsPage(),
+        '/word_list': (context) => WordList(),
       },
     );
   }
