@@ -55,14 +55,15 @@ class _CameraPageState extends State<CameraPage> {
         return annotation.description == word;
       });
     });
+    setState(() => _isLoading = false);
+    File(filePath).delete();
     Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => ChallengeResults(
                 success: success,
               ),
         ));
     // free resources
-    setState(() => _isLoading = false);
-    File(filePath).delete();
+    
   }
 
   _makeSnackBar(String message) {
@@ -72,9 +73,9 @@ class _CameraPageState extends State<CameraPage> {
     _scaffoldKey.currentState.showSnackBar(snackbar);
   }
 
-  _takePhoto() {
+  _takePhotoWrapper() {
     setState(() => _isLoading = true);
-    _takePhotoWrapper()
+    _takePhoto()
       .then((filePath) {
         if (mounted) {
           // setState(() => imagePath = filePath);
@@ -85,13 +86,13 @@ class _CameraPageState extends State<CameraPage> {
         }
       })
       .catchError((e) => setState(() {
-        _isLoading = false;
+        setState(() => _isLoading = false);
         _makeSnackBar(e);
       })
       );
   }
 
-  Future<String> _takePhotoWrapper() async {
+  Future<String> _takePhoto() async {
     print('taking picture');
     final Directory extDir = await getApplicationDocumentsDirectory();
     final String dirPath = '${extDir.path}/Pictures/test';
@@ -164,7 +165,7 @@ class _CameraPageState extends State<CameraPage> {
           quarterTurns: 1,
           child:Icon(Icons.camera_alt)
         ),
-        onPressed: () => _takePhoto(),
+        onPressed: () => _takePhotoWrapper(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
