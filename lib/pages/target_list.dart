@@ -115,9 +115,8 @@ class TargetListState extends State<TargetList> with SingleTickerProviderStateMi
           return new ListCard(
             isSelected: _targetUID == friend.uuid,
             text: friend.name,
-            onTap: selectTarget,
+            onTap: () => selectTarget(friend.uuid),
             leadingIcon: new CircleAvatar(child: Text(friend.name.substring(0,1))),
-            onTapArg: friend.uuid,
           );
         }).toList()
         :

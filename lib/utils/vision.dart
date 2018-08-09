@@ -1,9 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/services.dart';
+
+enum AnnotationRequestMode {
+  URI,
+  Base64String
+}
 
 class ComputerVision {
   static String _accessToken;
@@ -13,13 +17,12 @@ class ComputerVision {
     return await rootBundle.loadString('creds.json');
   }
 
-
-  static Future<VisionResponse> annotateImage(String imageUri) async {
+  static Future<VisionResponse> annotateImage(String imageUri, AnnotationRequestMode mode) async {
     _accessToken = jsonDecode(await loadAsset())['google-api-key'];
 
     http.Response res = await http
         .post(_visionEndpoint + '?key=$_accessToken',
-          body: _buildRequestString(imageUri),
+          body: _buildRequestString(imageUri, mode),
         )
         .timeout(new Duration(seconds: 4));
 
@@ -30,7 +33,16 @@ class ComputerVision {
     }
   }
 
-  static String _buildRequestString(String imageUri) {
+  static String _buildRequestString(String imageSource, AnnotationRequestMode mode) {
+    Map<String,dynamic> imageOpts;
+    switch(mode) {
+      case AnnotationRequestMode.URI:
+        imageOpts = {'source': {'imageUri': imageSource}};
+        break;
+      case AnnotationRequestMode.Base64String:
+        imageOpts = {'content': imageSource};
+        break;
+    }
     String encodedString = jsonEncode({
       'requests' : 
       [
@@ -38,9 +50,7 @@ class ComputerVision {
           'features': [
             {'type': 'LABEL_DETECTION'}
           ],
-          'image': {
-            'source': {'imageUri': imageUri}
-          }
+          'image': imageOpts
         }
       ]
     });

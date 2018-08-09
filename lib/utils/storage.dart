@@ -24,7 +24,7 @@ class Storage {
                               .where('uuid', isEqualTo: userUID)
                               .getDocuments();
     // extract uids for all friends
-    return q.documents.map( (doc) { return doc['fuid']; }).cast<String>().toList();;
+    return q.documents.map( (doc) { return doc['fuid']; }).cast<String>().toList();
   }
 
   static Future<List<User>> getFriendsAsUsers(String userUID) async {
