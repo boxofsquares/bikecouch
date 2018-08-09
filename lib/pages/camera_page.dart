@@ -111,6 +111,28 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final rounded = Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            width: MediaQuery.of(context).size.width * 0.10,
+            color: Colors.black12,
+          )
+        )
+      ),
+    );
+
+    final overlay = Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        rounded,
+        rounded,
+      ]
+    );
+  
+
     if (!controller.value.isInitialized) {
       return new Container();
     }
@@ -125,12 +147,16 @@ class _CameraPageState extends State<CameraPage> {
           ),
           _isLoading ? Center(
             child: CircularProgressIndicator(),
-          ) : Text('')
+          ) : Text(''),
+          overlay,
         ],
         
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.camera_alt),
+        child: RotatedBox(
+          quarterTurns: 1,
+          child:Icon(Icons.camera_alt)
+        ),
         onPressed: () => _takePhoto(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
