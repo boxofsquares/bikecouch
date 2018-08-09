@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as im;
+import 'dart:convert';
 
 import 'dart:async';
 import 'dart:io';
@@ -47,9 +49,19 @@ class _CameraPageState extends State<CameraPage> {
 
   _uploadPhoto(String filePath) async {
     // String url = await Bucket.uploadFile(filePath);
-    String b64 = Bucket.imageToBase64String(filePath);
+
+    final File imageFile = File(filePath);
+    final im.Image src = im.decodeJpg(imageFile.readAsBytesSync());
+    im.Image left = im.copyCrop(src, 0, 0, src.width ~/ 2, src.height);
+    im.Image right = im.copyCrop(src, src.width ~/ 2, 0, src.width ~/ 2, src.height);
+
+    String leftb64 = base64Encode(left.getBytes());
+    String rightb64 = base64Encode(right.getBytes());
+
+
+    // String b64 = Bucket.imageToBase64String(filePath);
     VisionResponse vs = await ComputerVision.annotateImage(
-        b64, AnnotationRequestMode.Base64String);
+        leftb64, AnnotationRequestMode.Base64String);
     bool success = vs.annotations.any((annotation) {
       return widget.challengeWords.any((word) {
         return annotation.description == word;
