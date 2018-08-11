@@ -39,7 +39,6 @@ class _WordListState extends State<WordList>
 
   List<String> _selectedWords = List<String>();
   List<String> _allWords = List<String>();
-  List<Challenge> _allPendingChallenges = List<Challenge>();
   bool _isLoading;
   bool _isOffline;
   int _currentTabIndex;
@@ -52,9 +51,8 @@ class _WordListState extends State<WordList>
   void initState() {
     _isOffline = false;
     _currentTabIndex = 0;
-    shuffleWords();
-    getPendingChallenges();
-    setupPlaceholderAnimation();
+    _shuffleWords();
+    _setupPlaceholderAnimation();
     super.initState();
   }
 
@@ -68,9 +66,11 @@ class _WordListState extends State<WordList>
       padding: EdgeInsetsDirectional.only(bottom: 60.00),
     );
 
-    Widget pendingChallenges = new ListView(
-      children: buildPendingChallenges(),
-    );
+    // Widget pendingChallenges = new ListView(
+    //   children: buildPendingChallenges(),
+    // );
+
+    Widget pendingChallenges = _buildPendingChallenges();
 
     return Scaffold(
       appBar: new AppBar(
@@ -89,8 +89,7 @@ class _WordListState extends State<WordList>
             icon: _currentTabIndex == 0
                 ? Icon(Icons.shuffle)
                 : Icon(Icons.refresh),
-            onPressed:
-                _currentTabIndex == 0 ? shuffleWords : getPendingChallenges,
+            onPressed: _currentTabIndex == 0 ? _shuffleWords : () => {},
           ),
           IconButton(
             icon: Icon(Icons.person_add),
@@ -103,7 +102,7 @@ class _WordListState extends State<WordList>
       floatingActionButton: _currentTabIndex == 0 && _selectedWords.length >= 2
           ? PillButton(
               text: "Choose your target!",
-              onTap: setChallenge,
+              onTap: _setChallenge,
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -163,7 +162,7 @@ class _WordListState extends State<WordList>
     });
   }
 
-  void setChallenge() {
+  void _setChallenge() {
     Navigator
         .of(context)
         .push(new MaterialPageRoute(
@@ -175,12 +174,12 @@ class _WordListState extends State<WordList>
       if (reset == null) {
         return;
       } else if (reset == true) {
-        shuffleWords();
+        _shuffleWords();
       }
     });
   }
 
-  void shuffleWords() async {
+  void _shuffleWords() async {
     placeholderAnimationController.forward();
     DataMuse.datamuseFetchData().then((res) {
       var dmWordList = res.words.where((word) {
@@ -220,7 +219,7 @@ class _WordListState extends State<WordList>
     });
   }
 
-  void setupPlaceholderAnimation() {
+  void _setupPlaceholderAnimation() {
     // Placeholder animation setup
     placeholderAnimationController = new AnimationController(
       duration: Duration(milliseconds: 1000),
@@ -240,41 +239,65 @@ class _WordListState extends State<WordList>
 
   void _launchCamera(Set<String> wordPair) {
     print('hey');
-    availableCameras()
-      .then((cameras) {
-        print(cameras);
-        Navigator.of(context).push(
-          new MaterialPageRoute(
+    availableCameras().then((cameras) {
+      print(cameras);
+      Navigator.of(context).push(new MaterialPageRoute(
             // NOTE: These are placeholder challenge words for testing [cup, plate].
             builder: (context) => CameraPage(cameras: cameras, challengeWords: wordPair),
           ));
-      })
-      .catchError((e) => print('camera error'));
+    }).catchError((e) => print('camera error'));
   }
 
-  List<Widget> buildPendingChallenges() {
-    return _allPendingChallenges
-      .map((challenge) {
-        return ListCard(
-          text: challenge.wordPair.join('  '),
-          enabled: true,
-          leadingIcon: Icon(Icons.send),
-          trailingIcon: Text(challenge.challenger.name),
-          onTap: () => _launchCamera(challenge.wordPair),
-        );
-      }).toList();
-  }
-
-  void getPendingChallenges() async {
-    // NOTE: Pulling the user idea from _auth instead of AppState because
-    // Appstate is not set before the first widget build.
-    Storage
-        .getPendingChallengesFor((await _auth.currentUser()).uid)
-        .then((challenges) {
-      setState(() {
-        _allPendingChallenges = challenges;
-      });
-    });
+  Widget _buildPendingChallenges() {
+    return StreamBuilder(
+        stream: Storage.pendingChallengesStreamFor(appState.user.uuid),
+        builder: (BuildContext context,
+            AsyncSnapshot<List<Challenge>> asyncSnapshot) {
+          List<Widget> listItems;
+          if (asyncSnapshot.hasData) {
+            if (placeholderAnimationController.isAnimating) {
+              placeholderAnimationController.stop();
+            }
+            if (asyncSnapshot.data.length == 0) {
+              listItems = <Widget>[
+                new ListTile(
+                  title: Text(
+                    'No pending challenges :(',
+                    style: TextStyle(color: Colors.grey[400]),
+                    textAlign: TextAlign.center,
+                  ),
+                  contentPadding: EdgeInsets.all(18.00),
+                )
+              ];
+            } else {
+              listItems = asyncSnapshot.data.map((challenge) {
+                return ListCard(
+                  text: challenge.wordPair.join('  '),
+                  enabled: true,
+                  leadingIcon: Icon(Icons.send),
+                  trailingIcon: Text(challenge.challenger.name),
+                  onTap: () => _launchCamera(challenge.wordPair),
+                );
+              }).toList();
+            }
+          } else {
+            //NOTE: LOADING
+            listItems = generateWordPairs().take(3).map((wp) {
+              return new FadeTransitionWidget(
+                child: new ListCard(
+                  text: wp.asPascalCase,
+                  enabled: false,
+                  leadingIcon: Icon(Icons.send),
+                  ),
+                  animation: placeholderAnimation,
+              );
+            }).toList();
+            placeholderAnimationController.forward();
+          }
+          return new ListView(
+            children: listItems,
+          );
+        });
   }
 
   void _handleNavigationBarTab(int index) {

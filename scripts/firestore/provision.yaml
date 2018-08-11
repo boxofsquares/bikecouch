@@ -1,0 +1,37 @@
+categories:
+  kitchen:
+    - table
+    - chair
+    - sink
+    - pan
+    - plate
+    - cup
+    - glass
+    - fork
+  
+  living:
+    - table
+    - chair
+    - couch
+    - tv
+    - fireplace
+    - plant
+    - candle
+    - lamp
+    - book
+  
+  outdoor:
+    - tree
+    - grass
+    - dog
+    - cat
+    - car
+    - stop sign
+    - flower
+    - rock
+  
+  beach:
+    - ball
+    - umbrella
+    - water
+    - sand

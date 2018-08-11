@@ -1,0 +1,16 @@
+{
+  "name": "bikecouch-node",
+  "version": "1.0.0",
+  "description": "Node utility to manage uploads to Firebae/Cloud Firestore.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Janik & Sean",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/firestore": "^0.16.0",
+    "firebase-admin": "^6.0.0",
+    "yaml": "^1.0.0-rc.7"
+  }
+}
