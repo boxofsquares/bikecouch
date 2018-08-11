@@ -246,7 +246,7 @@ class _WordListState extends State<WordList>
         Navigator.of(context).push(
           new MaterialPageRoute(
             // NOTE: These are placeholder challenge words for testing [cup, plate].
-            builder: (context) => CameraPage(cameras: cameras, challengeWords: ['cup', 'plate'].toSet()),
+            builder: (context) => CameraPage(cameras: cameras, challengeWords: wordPair),
           ));
       })
       .catchError((e) => print('camera error'));
