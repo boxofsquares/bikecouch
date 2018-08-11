@@ -37,8 +37,8 @@ class _WordListState extends State<WordList>
   AppState appState;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  List<String> _selectedWords = List<String>();
-  List<String> _allWords = List<String>();
+  List<String> _selectedWords;
+  List<String> _allWords;
   bool _isLoading;
   bool _isOffline;
   int _currentTabIndex;
@@ -49,7 +49,10 @@ class _WordListState extends State<WordList>
 
   @override
   void initState() {
+    _selectedWords = List<String>();
+    _allWords = List<String>();
     _isOffline = false;
+    _isLoading = false;
     _currentTabIndex = 0;
     _shuffleWords();
     _setupPlaceholderAnimation();
@@ -181,42 +184,45 @@ class _WordListState extends State<WordList>
 
   void _shuffleWords() async {
     placeholderAnimationController.forward();
-    DataMuse.datamuseFetchData().then((res) {
-      var dmWordList = res.words.where((word) {
-        return word.tags.length < 2 && word.tags.contains("n");
-      }).map((word) {
-        return word.word;
-      }).toList();
-      _allWords.clear();
-      setState(() {
-        for (var i = 0; i < 10; i++) {
-          var index = num.nextInt(dmWordList.length);
-          _allWords.add(dmWordList[index]);
-        }
-        _isLoading = false;
-        _isOffline = false;
-      });
-      placeholderAnimationController.reset();
-    }).catchError((e) {
-      setState(() {
-        _isLoading = false;
-        _isOffline = true;
-      });
-    });
+    _isLoading = true;
+    // DataMuse.datamuseFetchData().then((res) {
+    //   var dmWordList = res.words.where((word) {
+    //     return word.tags.length < 2 && word.tags.contains("n");
+    //   }).map((word) {
+    //     return word.word;
+    //   }).toList();
+    //   _allWords.clear();
+    //   setState(() {
+    //     for (var i = 0; i < 10; i++) {
+    //       var index = num.nextInt(dmWordList.length);
+    //       _allWords.add(dmWordList[index]);
+    //     }
+    //     _isLoading = false;
+    //     _isOffline = false;
+    //   });
+    //   placeholderAnimationController.reset();
+    // }).catchError((e) {
+    //   setState(() {
+    //     _isLoading = false;
+    //     _isOffline = true;
+    //   });
+    // });
 
-    num = Random(new DateTime.now().millisecondsSinceEpoch);
-
+    // num = Random(new DateTime.now().millisecondsSinceEpoch);
+    List<String> _newWords = await Storage.getRandomWords();
     setState(() {
-      _isLoading = true;
+      _isLoading = false;
       _isOffline = false;
       _selectedWords.clear();
-      _allWords.clear();
+      // _allWords.clear();
+      _allWords = _newWords;
 
-      for (var i = 0; i < 10; i++) {
-        var index = num.nextInt(nouns.length);
-        _allWords.add(nouns[index]);
-      }
+      // for (var i = 0; i < 10; i++) {
+      //   var index = num.nextInt(nouns.length);
+      //   _allWords.add(nouns[index]);
+      // }
     });
+    placeholderAnimationController.reset();
   }
 
   void _setupPlaceholderAnimation() {

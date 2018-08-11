@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +9,24 @@ import '../models/challenge.dart';
 
 class Storage {
   static final Firestore _store = Firestore.instance;
+
+  // WORDS
+
+  static Future<List<String>> getRandomWords() async {
+    return await _store
+      .collection('category')
+      .document('kitchen')
+      .collection('words')
+      .getDocuments()
+      .then((querySnap) {
+        return querySnap.documents.map((doc) {
+          return doc.documentID;
+        })
+        .toList();
+      });
+  }
+
+  // USERS
 
   static Future<bool> registerUserDetails(String userUID, String displayName) {
     _store.collection('userDetails').document(userUID).setData({
