@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as im;
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 import 'dart:async';
 import 'dart:io';
@@ -8,7 +11,12 @@ import 'dart:io';
 import '../utils/bucket.dart';
 import '../utils/vision.dart';
 
+import '../models/app_state.dart';
+import '../app_state_container.dart';
+
 import '../pages/challenge_results_page.dart';
+
+import 'package:http/http.dart' as http;
 
 class CameraPage extends StatefulWidget {
   CameraPage({this.cameras, this.challengeWords});
@@ -20,6 +28,7 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
+  AppState appState;
   CameraController controller;
   String imagePath;
   bool _isLoading;
@@ -47,23 +56,58 @@ class _CameraPageState extends State<CameraPage> {
 
   _uploadPhoto(String filePath) async {
     // String url = await Bucket.uploadFile(filePath);
+
+    // final File imageFile = File(filePath);
+    // final im.Image src = Image(image: imageFile.readAsBytesSync());
+    // im.Image left = im.copyCrop(src, 0, 0, src.width ~/ 2, src.height);
+    // im.Image right = im.copyCrop(src, src.width ~/ 2, 0, src.width ~/ 2, src.height);
+
+    // Navigator.of(context).push(MaterialPageRoute(
+    //   builder: (context) => DisplayImagesTest(
+    //     left: left.getBytes(),
+    //     right: right.getBytes()
+    //   )
+    // ));
+
+
+    // String leftb64 = base64Encode(left.getBytes());
+    // String rightb64 = base64Encode(right.getBytes());
+
+
     String b64 = Bucket.imageToBase64String(filePath);
-    VisionResponse vs = await ComputerVision.annotateImage(
-        b64, AnnotationRequestMode.Base64String);
-    bool success = vs.annotations.any((annotation) {
-      return widget.challengeWords.any((word) {
-        return annotation.description == word;
-      });
-    });
-    setState(() => _isLoading = false);
-    File(filePath).delete();
-    Navigator.of(context).push(MaterialPageRoute(
+    String url = 'https://us-central1-bikecouch.cloudfunctions.net/resize-crop-and-label';
+
+    
+    http
+      .post(url, headers: {'uuid': '${appState.user.uuid}'}, body: {'image': b64, 'left': widget.challengeWords.first, 'right': widget.challengeWords.last})
+      .then(((response) {
+        setState(() => _isLoading = false);
+        print("Response status: ${response.statusCode}");
+        print("Response body: ${response.body}");
+
+        Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => ChallengeResults(
-                success: success,
+                success: json.decode(response.body)['result'],
               ),
         ));
+      }));
+    // Bucket.uploadFile(filePath, appState.user.uuid);
+
+    // VisionResponse vs = await ComputerVision.annotateImage(
+    //     b64, AnnotationRequestMode.Base64String);
+    // bool success = vs.annotations.any((annotation) {
+    //   return widget.challengeWords.any((word) {
+    //     return annotation.description == word;
+    //   });
+    // });
+    // Navigator.of(context).push(MaterialPageRoute(
+    //       builder: (context) => ChallengeResults(
+    //             success: success,
+    //           ),
+    //     ));
     // free resources
     
+    File(filePath).delete();
   }
 
   _makeSnackBar(String message) {
@@ -119,6 +163,8 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   Widget build(BuildContext context) {
+    var container = AppStateContainer.of(context);
+    appState = container.state;
 
     final rounded = Expanded(
       child: Container(
