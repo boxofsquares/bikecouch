@@ -25,7 +25,7 @@ class TargetListState extends State<TargetList>
     with SingleTickerProviderStateMixin {
   AppState appState;
 
-  String _targetUID;
+  List<String> _targetUIDs;
   String _searchExpression;
 
   Animation placeholderAnimation;
@@ -33,7 +33,7 @@ class TargetListState extends State<TargetList>
 
   @override
   void initState() {
-    _targetUID = '';
+    _targetUIDs = List<String>();
     _searchExpression = '';
     setupPlaceholderAnimation();
     super.initState();
@@ -75,10 +75,10 @@ class TargetListState extends State<TargetList>
           ),
         ],
       ),
-      floatingActionButton: _targetUID != ''
+      floatingActionButton: _targetUIDs.length > 0
           ? PillButton(
               text: 'Send the challenge!',
-              onTap: () => sendChallenge(_targetUID),
+              onTap: () => sendChallenge(),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -110,7 +110,7 @@ class TargetListState extends State<TargetList>
               return user.name.indexOf(_searchExpression) > -1;
             }).map((user) {
               return new ListCard(
-                isSelected: _targetUID == user.uuid,
+                isSelected: _targetUIDs.contains(user.uuid),
                 text: user.name,
                 onTap: () => selectTarget(user.uuid),
                 leadingIcon:
@@ -140,7 +140,11 @@ class TargetListState extends State<TargetList>
 
   void selectTarget(String friendUID) {
     setState(() {
-      _targetUID = _targetUID == friendUID ? '' : friendUID;
+      if (_targetUIDs.contains(friendUID)) {
+        _targetUIDs.remove(friendUID);
+      } else {
+        _targetUIDs.add(friendUID);
+      }
     });
   }
 
@@ -150,9 +154,9 @@ class TargetListState extends State<TargetList>
     });
   }
 
-  void sendChallenge(String targetUID) {
-    Storage.sendChallengeFromTo(
-        appState.user.uuid, targetUID, widget.challenge);
+  void sendChallenge() {
+    Storage.sendChallengeFromToMany(
+        appState.user.uuid, _targetUIDs, widget.challenge);
     Navigator.pop(context, true);
   }
 

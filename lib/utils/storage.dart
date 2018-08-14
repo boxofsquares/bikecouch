@@ -229,6 +229,15 @@ class Storage {
       'challenger': userUID,
       'target': targetUID,
       'wordpair': wordPair.toList(),
+      //TODO: Work-around -- server timestamp would be MUCH better
+      'created': DateTime.now().toUtc(), 
+    });
+    return Future.value(true);
+  }
+
+  static Future<bool> sendChallengeFromToMany(String userUID, List<String> targetUIDs, List<String>wordPair) {
+    targetUIDs.forEach((targetUID) {
+      sendChallengeFromTo(userUID, targetUID, wordPair);
     });
     return Future.value(true);
   }
