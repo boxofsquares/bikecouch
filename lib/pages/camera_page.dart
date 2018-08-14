@@ -30,10 +30,12 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   AppState appState;
   CameraController controller;
+  GlobalKey leftFocusBoxKey = GlobalKey();
+  GlobalKey rightFocusBoxKey = GlobalKey();
+  GlobalKey _cameraBoxKey = GlobalKey();
   String imagePath;
   bool _isLoading;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
 
   @override
   void initState() {
@@ -69,28 +71,31 @@ class _CameraPageState extends State<CameraPage> {
     //   )
     // ));
 
-
     // String leftb64 = base64Encode(left.getBytes());
     // String rightb64 = base64Encode(right.getBytes());
 
-
     String b64 = Bucket.imageToBase64String(filePath);
-    String url = 'https://us-central1-bikecouch.cloudfunctions.net/resize-crop-and-label';
+    String url =
+        'https://us-central1-bikecouch.cloudfunctions.net/resize-crop-and-label';
 
-    
-    http
-      .post(url, headers: {'uuid': '${appState.user.uuid}'}, body: {'image': b64, 'left': widget.challengeWords.first, 'right': widget.challengeWords.last})
-      .then(((response) {
-        setState(() => _isLoading = false);
-        print("Response status: ${response.statusCode}");
-        print("Response body: ${response.body}");
+    http.post(url, headers: {
+      'uuid': '${appState.user.uuid}'
+    }, body: {
+      'image': b64,
+      'left': widget.challengeWords.first,
+      'right': widget.challengeWords.last,
+      'anchors': jsonEncode(getFocusAnchors()),
+    }).then(((response) {
+      setState(() => _isLoading = false);
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
 
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => ChallengeResults(
-                success: json.decode(response.body)['result'],
-              ),
-        ));
-      }));
+      Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => ChallengeResults(
+                  success: json.decode(response.body)['result'],
+                ),
+          ));
+    }));
     // Bucket.uploadFile(filePath, appState.user.uuid);
 
     // VisionResponse vs = await ComputerVision.annotateImage(
@@ -106,34 +111,29 @@ class _CameraPageState extends State<CameraPage> {
     //           ),
     //     ));
     // free resources
-    
+
     File(filePath).delete();
   }
 
   _makeSnackBar(String message) {
-    final snackbar = SnackBar(
-      content: Text(message)
-    );
+    final snackbar = SnackBar(content: Text(message));
     _scaffoldKey.currentState.showSnackBar(snackbar);
   }
 
   _takePhotoWrapper() {
     setState(() => _isLoading = true);
-    _takePhoto()
-      .then((filePath) {
-        if (mounted) {
-          // setState(() => imagePath = filePath);
-          _uploadPhoto(filePath);
-        }
-        if (filePath != null) {
-          print('image saved to $filePath');
-        }
-      })
-      .catchError((e) => setState(() {
-        setState(() => _isLoading = false);
-        _makeSnackBar(e);
-      })
-      );
+    _takePhoto().then((filePath) {
+      if (mounted) {
+        // setState(() => imagePath = filePath);
+        _uploadPhoto(filePath);
+      }
+      if (filePath != null) {
+        print('image saved to $filePath');
+      }
+    }).catchError((e) => setState(() {
+          setState(() => _isLoading = false);
+          _makeSnackBar(e);
+        }));
   }
 
   Future<String> _takePhoto() async {
@@ -166,54 +166,142 @@ class _CameraPageState extends State<CameraPage> {
     var container = AppStateContainer.of(context);
     appState = container.state;
 
-    final rounded = Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            width: MediaQuery.of(context).size.width * 0.10,
-            color: Colors.black12,
-          )
-        )
-      ),
-    );
-
     final overlay = Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        rounded,
-        rounded,
-      ]
-    );
-  
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          createFocusBox(leftFocusBoxKey),
+          createFocusBox(rightFocusBoxKey),
+        ]);
 
     if (!controller.value.isInitialized) {
       return new Container();
     }
+
     return Scaffold(
-      key: _scaffoldKey, 
-      body: Stack(
-        children: <Widget>[
-          AspectRatio(
-            aspectRatio:
-            controller.value.aspectRatio,
-            child: CameraPreview(controller)
-          ),
-          _isLoading ? Center(
-            child: CircularProgressIndicator(),
-          ) : Text(''),
-          overlay,
-        ],
-        
+      key: _scaffoldKey,
+      body: new Container(
+        color: Colors.black,
+        child: new Column(
+          children: <Widget>[
+            new AspectRatio(
+              aspectRatio: controller.value.aspectRatio,
+              child: new Stack(
+                children: <Widget>[
+                  Center(
+                    key: _cameraBoxKey,
+                    child: CameraPreview(controller)),
+                  _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : Text(''),
+                  overlay,
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: RotatedBox(
-          quarterTurns: 1,
-          child:Icon(Icons.camera_alt)
-        ),
+        child: RotatedBox(quarterTurns: 1, child: Icon(Icons.camera_alt)),
         onPressed: () => _takePhotoWrapper(),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  Widget createFocusBox(Key key) {
+    final borderWidth = MediaQuery.of(context).size.width * 0.10;
+    final borderShade = Colors.black12;
+    return Expanded(
+      child: Container(
+        key: key,
+        decoration: BoxDecoration(
+          border: BorderDirectional(
+            top: BorderSide(
+              width: borderWidth / 2,
+              color: borderShade,
+            ),
+            bottom: BorderSide(
+              width: borderWidth / 2,
+              color: borderShade,
+            ),
+            start: BorderSide(
+              width: borderWidth,
+              color: borderShade,
+            ),
+            end: BorderSide(
+              width: borderWidth,
+              color: borderShade,
+            ),
+          )
+        )
+      )
+    );
+  }
+
+  /*
+    Calculates the UI overlay position anchors for better cropping of the taken image.
+    TODO: Allow resizing of the overlay boxes./
+  */
+  Object getFocusAnchors() {
+    RenderBox cameraBox = _cameraBoxKey.currentContext.findRenderObject();
+    final cameraHeight = cameraBox.paintBounds.height;
+    final cameraWidth = cameraBox.paintBounds.width;
+
+    // NOTE: This is a copy-paste from #createFocusBox, should be pulled out into a constant.
+    final shadowWidth = MediaQuery.of(context).size.width * 0.10;
+
+    // Extract the focusbox position and width MINUS the border.
+    RenderBox leftBox = leftFocusBoxKey.currentContext.findRenderObject();
+    RenderBox rightBox = rightFocusBoxKey.currentContext.findRenderObject();
+    Offset leftBoxOffsetRaw = cameraBox.globalToLocal(leftBox.localToGlobal(leftBox.paintBounds.topLeft));
+    Offset leftBoxOffset = Offset(leftBoxOffsetRaw.dy + shadowWidth / 2, leftBoxOffsetRaw.dx + shadowWidth);
+    final leftBoxWidth = leftBox.paintBounds.width - 2 * shadowWidth;
+    final leftBoxHeight = leftBox.paintBounds.height - shadowWidth;
+    Offset rightBoxOffsetRaw = cameraBox.globalToLocal(rightBox.localToGlobal(rightBox.paintBounds.topLeft));
+    Offset rightBoxOffset = Offset(rightBoxOffsetRaw.dy + shadowWidth / 2, rightBoxOffsetRaw.dx + shadowWidth);
+    final rightBoxWidth = rightBox.paintBounds.width - 2 * shadowWidth;
+    final rightBoxHeight = rightBox.paintBounds.height - shadowWidth;
+ 
+  
+    /*
+    All returned sizes are RELATIVE to the full image size.
+    That is necessary becasue the UI does not render in the same resolution as the camera.
+    Alternativley, all sizes could be scaled UP to the full image resoltion, which one must know beforehand.
+
+                       WIDTH
+                  ---------------
+                  |             |
+                  |             |
+                  |             |
+         HEIGHT   |             |
+                  |             |
+                  |             |
+                  |             |
+                  |             |
+                  |             |
+                  |  <  @  []   |
+    */
+    return {
+      'camera': 
+        {
+          // This is UI pixesl !!!
+          'height': cameraBox.paintBounds.height,
+        },
+      'left': 
+        {
+          'dy_offset': leftBoxOffset.dy / cameraHeight,
+          'width': leftBoxWidth / cameraWidth,
+          'height': leftBoxHeight / cameraHeight,
+        },
+      'right':
+        {
+          'dy_offset': rightBoxOffset.dy / cameraHeight,
+          'width': rightBoxWidth / cameraWidth,
+          'height': rightBoxHeight / cameraHeight,
+        }
+    };
   }
 }
