@@ -14,16 +14,15 @@ class Storage {
 
   static Future<List<String>> getRandomWords(String category) async {
     return await _store
-      .collection('category')
-      .document(category)
-      .collection('words')
-      .getDocuments()
-      .then((querySnap) {
-        return querySnap.documents.map((doc) {
-          return doc.documentID;
-        })
-        .toList();
-      });
+        .collection('category')
+        .document(category)
+        .collection('words')
+        .getDocuments()
+        .then((querySnap) {
+      return querySnap.documents.map((doc) {
+        return doc.documentID;
+      }).toList();
+    });
   }
 
   // USERS
@@ -89,6 +88,8 @@ class Storage {
     _store.collection('friendInvitation').document().setData({
       'inviter': inviterUID,
       'invitee': inviteeUID,
+      //TODO: Server-side time stamp would be better.
+      'created': DateTime.now().toUtc(),
     });
     // for now, always return true
     return Future.value(true);
@@ -115,6 +116,11 @@ class Storage {
 
     _store.collection('friendInvitation').document(invitationUID).delete();
 
+    return Future.value(true);
+  }
+
+  static Future<bool> declineFriendRequest(String invitationUID) async {
+    _store.collection('friendInvitation').document(invitationUID).delete();
     return Future.value(true);
   }
 
@@ -158,15 +164,22 @@ class Storage {
     List<User> users = await getUsersByDisplayNameWith(keyWord);
     List<Future<Friendship>> fs = users.map((user) async {
       QuerySnapshot qs = await _store
-          .collection('friendInvitation')
-          .where('inviter', isEqualTo: userUID)
-          .where('invitee', isEqualTo: user.uuid)
+          .collection('friends')
+          .where('uuid', isEqualTo: userUID)
+          .where('fuid', isEqualTo: user.uuid)
           .getDocuments();
       FriendshipStatus status;
-      if (qs.documentChanges.length > 0) {
-        status = FriendshipStatus.Pending;
+      if (qs.documents.length > 0) {
+        status = FriendshipStatus.Friends;
       } else {
-        status = FriendshipStatus.Strangers;
+        QuerySnapshot qs = await _store
+            .collection('friendInvitation')
+            .where('inviter', isEqualTo: userUID)
+            .where('invitee', isEqualTo: user.uuid)
+            .getDocuments();
+        status = qs.documents.length > 0
+            ? FriendshipStatus.Pending
+            : FriendshipStatus.Strangers;
       }
       return new Friendship(friend: user, friendshipStatus: status);
     }).toList();
@@ -230,12 +243,13 @@ class Storage {
       'target': targetUID,
       'wordpair': wordPair.toList(),
       //TODO: Work-around -- server timestamp would be MUCH better
-      'created': DateTime.now().toUtc(), 
+      'created': DateTime.now().toUtc(),
     });
     return Future.value(true);
   }
 
-  static Future<bool> sendChallengeFromToMany(String userUID, List<String> targetUIDs, List<String>wordPair) {
+  static Future<bool> sendChallengeFromToMany(
+      String userUID, List<String> targetUIDs, List<String> wordPair) {
     targetUIDs.forEach((targetUID) {
       sendChallengeFromTo(userUID, targetUID, wordPair);
     });
@@ -247,7 +261,11 @@ class Storage {
     return _store
         .collection('challenges')
         .where('target', isEqualTo: userUID)
+        .orderBy('created', descending: true)
         .snapshots()
+        .handleError((onError) {
+          print(onError.details);
+        })
         .asyncMap((qs) async {
       List<Future<Challenge>> futures = qs.documents.map((doc) async {
         Set<String> set = new Set<String>();
@@ -292,18 +310,18 @@ class Storage {
 
   static Stream<List<User>> friendsStreamFor(String userUID) {
     return _store
-      .collection('friends')
-      .where('uuid', isEqualTo: userUID)
-      .snapshots()
-      .asyncMap((qs) async { 
-        List<Future<User>> futures = qs.documents.map((document) async {
-          DocumentSnapshot ds = await _store
-                                        .collection('userDetails')
-                                        .document(document.data['fuid'])
-                                        .get();
-          return User.fromDocument(ds);
-        }).toList();
-        return await Future.wait(futures);
-      });
+        .collection('friends')
+        .where('uuid', isEqualTo: userUID)
+        .snapshots()
+        .asyncMap((qs) async {
+      List<Future<User>> futures = qs.documents.map((document) async {
+        DocumentSnapshot ds = await _store
+            .collection('userDetails')
+            .document(document.data['fuid'])
+            .get();
+        return User.fromDocument(ds);
+      }).toList();
+      return await Future.wait(futures);
+    });
   }
 }

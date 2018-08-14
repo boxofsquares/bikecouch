@@ -24,7 +24,6 @@ class AddFriendsPage extends StatefulWidget {
 class AddFriendsPageState extends State<AddFriendsPage>
     with SingleTickerProviderStateMixin {
   AppState appState;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   int _currentTabIndex;
 
@@ -57,7 +56,7 @@ class AddFriendsPageState extends State<AddFriendsPage>
           List<Widget> listItems;
           if (asyncSnap.hasData) {
             if (placeholderAnimationController.isAnimating) {
-              placeholderAnimationController.stop();
+              placeholderAnimationController.reset();
             }
             if (asyncSnap.data.length == 0) {
               listItems = <Widget>[
@@ -76,23 +75,37 @@ class AddFriendsPageState extends State<AddFriendsPage>
                   text: invitation.user.name,
                   leadingIcon: new CircleAvatar(
                       child: Text(invitation.user.name.substring(0, 1))),
-                  // trailingIcon: Row(
-                  //   children: <Widget>[
-                  //     GestureDetector(
-                  //       onTap: (() => print('accept')),
-                  //       child: Icon(Icons.check_circle),
-                  //     ),
-                  //     GestureDetector(
-                  //       child: Icon(Icons.delete_forever),
-                  //       onTap: (() => print('delete')),
-                  //     ),
-                  //   ],
-                  // )
-                  trailingIcon: GestureDetector(
-                    onTap: (() {
-                      Storage.acceptFriendRequest(invitation.invitationUID);
-                    }),
-                    child: Icon(Icons.check_circle),
+                  //NOTE: Fix for space-hogging row as trailingIcon pointed out here:
+                  // https://github.com/flutter/flutter/issues/17666
+                  // i.e. set mainAxisSize = MainAxisSize.min as below
+                  trailingIcon: new Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      new Container(
+                        padding: EdgeInsets.all(16.00),
+                        child: GestureDetector(
+                          child: Icon(
+                            Icons.delete_forever,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          onTap: (() => Storage
+                              .declineFriendRequest(invitation.invitationUID)),
+                        ),
+                      ),
+                      new Container(
+                        padding: EdgeInsets.all(16.00),
+                        child: GestureDetector(
+                          onTap: (() {
+                            Storage
+                                .acceptFriendRequest(invitation.invitationUID);
+                          }),
+                          child: Icon(
+                            Icons.check_circle,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }).toList();

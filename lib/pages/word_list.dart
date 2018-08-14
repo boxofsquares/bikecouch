@@ -262,7 +262,7 @@ class _WordListState extends State<WordList>
           List<Widget> listItems;
           if (asyncSnapshot.hasData) {
             if (placeholderAnimationController.isAnimating) {
-              placeholderAnimationController.stop();
+              placeholderAnimationController.reset();
             }
             if (asyncSnapshot.data.length == 0) {
               listItems = <Widget>[
