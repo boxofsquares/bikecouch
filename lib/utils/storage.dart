@@ -12,10 +12,10 @@ class Storage {
 
   // WORDS
 
-  static Future<List<String>> getRandomWords() async {
+  static Future<List<String>> getRandomWords(String category) async {
     return await _store
       .collection('category')
-      .document('kitchen')
+      .document(category)
       .collection('words')
       .getDocuments()
       .then((querySnap) {

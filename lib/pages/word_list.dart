@@ -209,7 +209,7 @@ class _WordListState extends State<WordList>
     // });
 
     // num = Random(new DateTime.now().millisecondsSinceEpoch);
-    List<String> _newWords = await Storage.getRandomWords();
+    List<String> _newWords = await Storage.getRandomWords('kitchen');
     setState(() {
       _isLoading = false;
       _isOffline = false;
