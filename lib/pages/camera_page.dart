@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as im;
 import 'dart:convert';
-import 'package:flutter/services.dart';
 
 import 'dart:async';
 import 'dart:io';
 
-import '../utils/bucket.dart';
-import '../utils/vision.dart';
+import 'package:bikecouch/utils/bucket.dart';
 
-import '../models/app_state.dart';
-import '../app_state_container.dart';
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/app_state_container.dart';
 
-import '../pages/challenge_results_page.dart';
+import 'package:bikecouch/pages/challenge_results_page.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -32,7 +29,7 @@ class _CameraPageState extends State<CameraPage> {
   CameraController controller;
   GlobalKey leftFocusBoxKey = GlobalKey();
   GlobalKey rightFocusBoxKey = GlobalKey();
-  GlobalKey _cameraBoxKey = GlobalKey();
+  GlobalKey _stackBoxKey = GlobalKey();
   String imagePath;
   bool _isLoading;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -79,7 +76,7 @@ class _CameraPageState extends State<CameraPage> {
         'https://us-central1-bikecouch.cloudfunctions.net/resize-crop-and-label';
 
     http.post(url, headers: {
-      'uuid': '${appState.user.uuid}'
+      // 'uuid': '${appState.user.uuid}'
     }, body: {
       'image': b64,
       'left': widget.challengeWords.first,
@@ -163,8 +160,8 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   Widget build(BuildContext context) {
-    var container = AppStateContainer.of(context);
-    appState = container.state;
+    // var container = AppStateContainer.of(context);
+    // appState = container.state;
 
     final overlay = Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -187,16 +184,27 @@ class _CameraPageState extends State<CameraPage> {
             new AspectRatio(
               aspectRatio: controller.value.aspectRatio,
               child: new Stack(
+                key: _stackBoxKey,
                 children: <Widget>[
-                  Center(
-                    key: _cameraBoxKey,
-                    child: CameraPreview(controller)),
+                  Center(child: CameraPreview(controller)),
                   _isLoading
                       ? Center(
                           child: CircularProgressIndicator(),
                         )
                       : Text(''),
-                  overlay,
+                  DraggableFocusBox(
+                      leftFocusBoxKey,
+                      Offset(0.0, 0.0),
+                      MediaQuery.of(context).size.width * 2 / 3,
+                      MediaQuery.of(context).size.width * 2 / 3,
+                      _stackBoxKey),
+                  DraggableFocusBox(
+                      rightFocusBoxKey,
+                      Offset(0.0, 100.0),
+                      MediaQuery.of(context).size.width * 2 / 3,
+                      MediaQuery.of(context).size.width * 2 / 3,
+                      _stackBoxKey),
+                  // overlay,
                 ],
               ),
             ),
@@ -215,30 +223,27 @@ class _CameraPageState extends State<CameraPage> {
     final borderWidth = MediaQuery.of(context).size.width * 0.10;
     final borderShade = Colors.black12;
     return Expanded(
-      child: Container(
-        key: key,
-        decoration: BoxDecoration(
-          border: BorderDirectional(
-            top: BorderSide(
-              width: borderWidth / 2,
-              color: borderShade,
-            ),
-            bottom: BorderSide(
-              width: borderWidth / 2,
-              color: borderShade,
-            ),
-            start: BorderSide(
-              width: borderWidth,
-              color: borderShade,
-            ),
-            end: BorderSide(
-              width: borderWidth,
-              color: borderShade,
-            ),
-          )
-        )
-      )
-    );
+        child: Container(
+            key: key,
+            decoration: BoxDecoration(
+                border: BorderDirectional(
+              top: BorderSide(
+                width: borderWidth / 2,
+                color: borderShade,
+              ),
+              bottom: BorderSide(
+                width: borderWidth / 2,
+                color: borderShade,
+              ),
+              start: BorderSide(
+                width: borderWidth,
+                color: borderShade,
+              ),
+              end: BorderSide(
+                width: borderWidth,
+                color: borderShade,
+              ),
+            ))));
   }
 
   /*
@@ -246,7 +251,7 @@ class _CameraPageState extends State<CameraPage> {
     TODO: Allow resizing of the overlay boxes./
   */
   Object getFocusAnchors() {
-    RenderBox cameraBox = _cameraBoxKey.currentContext.findRenderObject();
+    RenderBox cameraBox = _stackBoxKey.currentContext.findRenderObject();
     final cameraHeight = cameraBox.paintBounds.height;
     final cameraWidth = cameraBox.paintBounds.width;
 
@@ -256,19 +261,22 @@ class _CameraPageState extends State<CameraPage> {
     // Extract the focusbox position and width MINUS the border.
     RenderBox leftBox = leftFocusBoxKey.currentContext.findRenderObject();
     RenderBox rightBox = rightFocusBoxKey.currentContext.findRenderObject();
-    Offset leftBoxOffsetRaw = cameraBox.globalToLocal(leftBox.localToGlobal(leftBox.paintBounds.topLeft));
-    Offset leftBoxOffset = Offset(leftBoxOffsetRaw.dy + shadowWidth / 2, leftBoxOffsetRaw.dx + shadowWidth);
-    final leftBoxWidth = leftBox.paintBounds.width - 2 * shadowWidth;
-    final leftBoxHeight = leftBox.paintBounds.height - shadowWidth;
-    Offset rightBoxOffsetRaw = cameraBox.globalToLocal(rightBox.localToGlobal(rightBox.paintBounds.topLeft));
-    Offset rightBoxOffset = Offset(rightBoxOffsetRaw.dy + shadowWidth / 2, rightBoxOffsetRaw.dx + shadowWidth);
-    final rightBoxWidth = rightBox.paintBounds.width - 2 * shadowWidth;
-    final rightBoxHeight = rightBox.paintBounds.height - shadowWidth;
- 
-  
+    Offset leftBoxOffsetRaw = cameraBox
+        .globalToLocal(leftBox.localToGlobal(leftBox.paintBounds.topLeft));
+    // Offset leftBoxOffset = Offset(leftBoxOffsetRaw.dx + shadowWidth,
+    //     leftBoxOffsetRaw.dx + shadowWidth / 2);
+    // final leftBoxWidth = leftBox.paintBounds.width - 2 * shadowWidth;
+    // final leftBoxHeight = leftBox.paintBounds.height - shadowWidth;
+    Offset rightBoxOffsetRaw = cameraBox
+        .globalToLocal(rightBox.localToGlobal(rightBox.paintBounds.topLeft));
+    // Offset rightBoxOffset = Offset(rightBoxOffsetRaw.dx + shadowWidth,
+    //     rightBoxOffsetRaw.dy + shadowWidth / 2);
+    // final rightBoxWidth = rightBox.paintBounds.width - 2 * shadowWidth;
+    // final rightBoxHeight = rightBox.paintBounds.height - shadowWidth;
+
     /*
     All returned sizes are RELATIVE to the full image size.
-    That is necessary becasue the UI does not render in the same resolution as the camera.
+    That is necessary because the UI does not render in the same resolution as the camera.
     Alternativley, all sizes could be scaled UP to the full image resoltion, which one must know beforehand.
 
                        WIDTH
@@ -285,23 +293,119 @@ class _CameraPageState extends State<CameraPage> {
                   |  <  @  []   |
     */
     return {
-      'camera': 
-        {
-          // This is UI pixesl !!!
-          'height': cameraBox.paintBounds.height,
-        },
-      'left': 
-        {
-          'dy_offset': leftBoxOffset.dy / cameraHeight,
-          'width': leftBoxWidth / cameraWidth,
-          'height': leftBoxHeight / cameraHeight,
-        },
-      'right':
-        {
-          'dy_offset': rightBoxOffset.dy / cameraHeight,
-          'width': rightBoxWidth / cameraWidth,
-          'height': rightBoxHeight / cameraHeight,
-        }
+      'camera': {
+        // This is UI pixesl !!!
+        'height': cameraBox.paintBounds.height,
+      },
+      'left': {
+        'dy_offset': leftBoxOffsetRaw.dy / cameraHeight,
+        'dx_offset': leftBoxOffsetRaw.dx / cameraWidth,
+        'width': leftBox.paintBounds.width / cameraWidth,
+        'height': leftBox.paintBounds.height / cameraHeight,
+      },
+      'right': {
+        'dy_offset': rightBoxOffsetRaw.dy / cameraHeight,
+        'dx_offset': rightBoxOffsetRaw.dx / cameraWidth,
+        'width': rightBox.paintBounds.width / cameraWidth,
+        'height': rightBox.paintBounds.height / cameraHeight,
+      }
     };
+  }
+}
+
+enum ResizeMode { Move, Scale }
+
+class DraggableFocusBox extends StatefulWidget {
+  final Offset initPos;
+  final double initWidth;
+  final double initHeight;
+  final GlobalKey parentKey;
+
+  DraggableFocusBox(
+      Key key, this.initPos, this.initWidth, this.initHeight, this.parentKey)
+      : super(key: key);
+
+  @override
+  _DraggableFocusBoxState createState() => _DraggableFocusBoxState();
+}
+
+class _DraggableFocusBoxState extends State<DraggableFocusBox> {
+  Offset position;
+  double width;
+  double height;
+  double startWidth;
+  double startHeight;
+
+  //Dragging
+  Offset _correctionPanPosition;
+
+  @override
+  void initState() {
+    position = widget.initPos;
+    width = widget.initWidth;
+    height = widget.initHeight;
+
+    super.initState();
+  }
+
+  //TODO: Implement uni-lateral scaling (rectangular)
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+        left: position.dx,
+        top: position.dy,
+        child: GestureDetector(
+                child: Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor,
+                      width: 2.0,
+                      style: BorderStyle.solid,
+                    ),
+                  ),
+                ),
+                onScaleStart: onScaleStart,
+                onScaleUpdate: onScaleUpdate,
+                onScaleEnd: onScaleEnd,
+              ));
+  }
+
+  void onScaleStart(ScaleStartDetails details) {
+    RenderBox parentBox = widget.parentKey.currentContext.findRenderObject();
+    setState(() {
+      startWidth = width;
+      startHeight = height;
+      _correctionPanPosition =
+          parentBox.globalToLocal(details.focalPoint) - position;
+    });
+  }
+
+  void onScaleUpdate(ScaleUpdateDetails details) {
+    double scaledWidth;
+    double scaledHeight;
+    Offset scaledPos;
+    RenderBox parent;
+    
+    // TODO: Implement boundary checks
+    parent = widget.parentKey.currentContext.findRenderObject();
+    scaledWidth = startWidth * details.scale;
+    scaledHeight = startHeight * details.scale;
+    scaledPos = parent.globalToLocal(details.focalPoint) - _correctionPanPosition;
+
+    setState(() {
+      width = scaledWidth;
+      height = scaledHeight;
+      position = scaledPos;
+    });
+  }
+
+  void onScaleEnd(ScaleEndDetails details) {
+    setState(() {
+      startWidth = 0.0;
+      startHeight = 0.0;
+      _correctionPanPosition = Offset.zero;
+    });
   }
 }
