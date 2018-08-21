@@ -32,7 +32,7 @@ exports.helloWorld = (req, res) => {
       console.log(`height: ${metadata.height}`);
       if (metadata.width > metadata.height) {
         let ldx = Math.floor(leftFocus['dy_offset'] * metadata.width) - 1;
-        let ldy = Math.floor((1 - leftFocus['dx_offset'] + leftFocus['width']) * metadata.height) - 1;
+        let ldy = Math.floor((1 - leftFocus['dx_offset'] - leftFocus['width']) * metadata.height) - 1;
         let lw =  Math.floor(Math.min(leftFocus['height'] * metadata.width - 1, metadata.width - ldx - 1));
         let lh = Math.floor(Math.min(leftFocus['width'] * metadata.height - 1, metadata.height - ldy - 1));
         promises.push(
@@ -53,7 +53,7 @@ exports.helloWorld = (req, res) => {
             })
         );
         let rdx = Math.floor(rightFocus['dy_offset'] * metadata.width) - 1;
-        let rdy = Math.floor((1 - rightFocus['dx_offset'] + rightFocus['width']) * metadata.height) - 1;
+        let rdy = Math.floor((1 - rightFocus['dx_offset'] - rightFocus['width']) * metadata.height) - 1;
         let rw =  Math.floor(Math.min(rightFocus['height'] * metadata.width - 1, metadata.width - rdx - 1));
         let rh = Math.floor(Math.min(rightFocus['width'] * metadata.height - 1, metadata.height - rdy - 1));
         promises.push(

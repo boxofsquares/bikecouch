@@ -27,16 +27,18 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   AppState appState;
   CameraController controller;
-  GlobalKey leftFocusBoxKey = GlobalKey();
-  GlobalKey rightFocusBoxKey = GlobalKey();
-  GlobalKey _stackBoxKey = GlobalKey();
+  final GlobalKey leftFocusBoxKey = GlobalKey();
+  final GlobalKey rightFocusBoxKey = GlobalKey();
+  final GlobalKey _stackBoxKey = GlobalKey();
   String imagePath;
+  List<Anchor> anchors;
   bool _isLoading;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     _isLoading = false;
+    anchors = List<Anchor>();
     super.initState();
     controller = new CameraController(widget.cameras[0], ResolutionPreset.high);
     controller.initialize().then((_) {
@@ -81,7 +83,10 @@ class _CameraPageState extends State<CameraPage> {
       'image': b64,
       'left': widget.challengeWords.first,
       'right': widget.challengeWords.last,
-      'anchors': jsonEncode(getFocusAnchors()),
+      'anchors': jsonEncode({
+        'left': anchors[0].toJson(),
+        'right': anchors[1].toJson(),
+      }),
     }).then(((response) {
       setState(() => _isLoading = false);
       print("Response status: ${response.statusCode}");
@@ -123,6 +128,24 @@ class _CameraPageState extends State<CameraPage> {
       if (mounted) {
         // setState(() => imagePath = filePath);
         _uploadPhoto(filePath);
+      }
+      if (filePath != null) {
+        print('image saved to $filePath');
+      }
+    }).catchError((e) => setState(() {
+          setState(() => _isLoading = false);
+          _makeSnackBar(e);
+        }));
+  }
+
+  _displayTakenPhoto() {
+    setState(() => _isLoading = true);
+    _takePhoto().then((filePath) {
+      if (mounted) {
+        setState(() {
+          imagePath = filePath;
+          _isLoading = false;
+        });
       }
       if (filePath != null) {
         print('image saved to $filePath');
@@ -175,6 +198,35 @@ class _CameraPageState extends State<CameraPage> {
       return new Container();
     }
 
+    Widget _cameraBoxContent;
+    FloatingActionButton _actionButton;
+
+    if (imagePath == null) {
+      _cameraBoxContent = Center(child: CameraPreview(controller));
+      _actionButton = FloatingActionButton(
+        child: RotatedBox(quarterTurns: 1, child: Icon(Icons.camera_alt)),
+        onPressed: () => _displayTakenPhoto(),
+      );
+    } else {
+      _cameraBoxContent = Image.file(File(imagePath));
+      _actionButton = FloatingActionButton(
+          child: Icon(Icons.navigate_next),
+          onPressed: () {
+            setState(() {
+              anchors.add(getFocusAnchor());
+            });
+            if (anchors.length > 1) {
+              _uploadPhoto(imagePath);
+            }
+            // File(imagePath).delete();
+            // imagePath = null;
+          });
+    }
+
+    double _deviceWidth = MediaQuery.of(context).size.width;
+    double _deviceHeight = MediaQuery.of(context).size.height;
+
+    // TODO: Add WillPopScope to catch back button press...
     return Scaffold(
       key: _scaffoldKey,
       body: new Container(
@@ -186,24 +238,30 @@ class _CameraPageState extends State<CameraPage> {
               child: new Stack(
                 key: _stackBoxKey,
                 children: <Widget>[
-                  Center(child: CameraPreview(controller)),
+                  _cameraBoxContent,
                   _isLoading
                       ? Center(
                           child: CircularProgressIndicator(),
                         )
-                      : Text(''),
-                  DraggableFocusBox(
-                      leftFocusBoxKey,
-                      Offset(0.0, 0.0),
-                      MediaQuery.of(context).size.width * 2 / 3,
-                      MediaQuery.of(context).size.width * 2 / 3,
-                      _stackBoxKey),
-                  DraggableFocusBox(
-                      rightFocusBoxKey,
-                      Offset(0.0, 100.0),
-                      MediaQuery.of(context).size.width * 2 / 3,
-                      MediaQuery.of(context).size.width * 2 / 3,
-                      _stackBoxKey),
+                      : Container(),
+                  imagePath == null
+                      ? Container()
+                      : DraggableFocusBox(
+                          Offset(
+                            _deviceWidth / 2 - (2 * _deviceHeight + 100) / 2,
+                            (_deviceHeight / 2) - (2 * _deviceHeight + 100) / 2,
+                          ),
+                          100.00,
+                          100.00,
+                          _stackBoxKey,
+                          leftFocusBoxKey,
+                        ),
+                  // DraggableFocusBox(
+                  //     rightFocusBoxKey,
+                  //     Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.width * 2 / 3 + 20.00),
+                  //     MediaQuery.of(context).size.width * 2 / 3,
+                  //     MediaQuery.of(context).size.width * 2 / 3,
+                  //     _stackBoxKey),
                   // overlay,
                 ],
               ),
@@ -211,10 +269,7 @@ class _CameraPageState extends State<CameraPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: RotatedBox(quarterTurns: 1, child: Icon(Icons.camera_alt)),
-        onPressed: () => _takePhotoWrapper(),
-      ),
+      floatingActionButton: _actionButton,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
@@ -311,6 +366,24 @@ class _CameraPageState extends State<CameraPage> {
       }
     };
   }
+
+  Anchor getFocusAnchor() {
+    RenderBox cameraBox = _stackBoxKey.currentContext.findRenderObject();
+    final cameraHeight = cameraBox.paintBounds.height;
+    final cameraWidth = cameraBox.paintBounds.width;
+
+    RenderBox leftBox = leftFocusBoxKey.currentContext.findRenderObject();
+    Offset leftBoxOffsetRaw = cameraBox
+        .globalToLocal(leftBox.localToGlobal(leftBox.paintBounds.topLeft));
+
+    // Normalisation with regards to the camera size
+    return Anchor(
+      leftBoxOffsetRaw.dx / cameraWidth,
+      leftBoxOffsetRaw.dy / cameraHeight,
+      leftBox.paintBounds.width / cameraWidth,
+      leftBox.paintBounds.height / cameraHeight,
+    );
+  }
 }
 
 enum ResizeMode { Move, Scale }
@@ -320,10 +393,10 @@ class DraggableFocusBox extends StatefulWidget {
   final double initWidth;
   final double initHeight;
   final GlobalKey parentKey;
+  final GlobalKey cropBoxKey;
 
-  DraggableFocusBox(
-      Key key, this.initPos, this.initWidth, this.initHeight, this.parentKey)
-      : super(key: key);
+  DraggableFocusBox(this.initPos, this.initWidth, this.initHeight,
+      this.parentKey, this.cropBoxKey);
 
   @override
   _DraggableFocusBoxState createState() => _DraggableFocusBoxState();
@@ -352,24 +425,34 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-        left: position.dx,
-        top: position.dy,
-        child: GestureDetector(
-                child: Container(
-                  width: width,
-                  height: height,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).primaryColor,
-                      width: 2.0,
-                      style: BorderStyle.solid,
-                    ),
-                  ),
-                ),
-                onScaleStart: onScaleStart,
-                onScaleUpdate: onScaleUpdate,
-                onScaleEnd: onScaleEnd,
-              ));
+      left: position.dx,
+      top: position.dy,
+      child: GestureDetector(
+        child: Container(
+          child: Container(
+            key: widget.cropBoxKey,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).primaryColor,
+                width: 5.0,
+                style: BorderStyle.solid,
+              ),
+            ),
+            width: width,
+            height: height,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.black45,
+              width: MediaQuery.of(context).size.height,
+            ),
+          ),
+        ),
+        onScaleStart: onScaleStart,
+        onScaleUpdate: onScaleUpdate,
+        onScaleEnd: onScaleEnd,
+      ),
+    );
   }
 
   void onScaleStart(ScaleStartDetails details) {
@@ -387,12 +470,13 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
     double scaledHeight;
     Offset scaledPos;
     RenderBox parent;
-    
+
     // TODO: Implement boundary checks
     parent = widget.parentKey.currentContext.findRenderObject();
     scaledWidth = startWidth * details.scale;
     scaledHeight = startHeight * details.scale;
-    scaledPos = parent.globalToLocal(details.focalPoint) - _correctionPanPosition;
+    scaledPos =
+        parent.globalToLocal(details.focalPoint) - _correctionPanPosition;
 
     setState(() {
       width = scaledWidth;
@@ -407,5 +491,23 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
       startHeight = 0.0;
       _correctionPanPosition = Offset.zero;
     });
+  }
+}
+
+class Anchor {
+  final double dx;
+  final double dy;
+  final double width;
+  final double height;
+
+  Anchor(this.dx, this.dy, this.width, this.height);
+
+  Object toJson() {
+    return {
+      'dx_offset': dx,
+      'dy_offset': dy,
+      'width': width,
+      'height': height,
+    };
   }
 }
