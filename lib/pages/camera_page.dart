@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:convert';
 
 import 'dart:async';
@@ -126,7 +127,6 @@ class _CameraPageState extends State<CameraPage> {
     setState(() => _isLoading = true);
     _takePhoto().then((filePath) {
       if (mounted) {
-        // setState(() => imagePath = filePath);
         _uploadPhoto(filePath);
       }
       if (filePath != null) {
@@ -216,6 +216,7 @@ class _CameraPageState extends State<CameraPage> {
               anchors.add(getFocusAnchor());
             });
             if (anchors.length > 1) {
+              setState(() => _isLoading = true);
               _uploadPhoto(imagePath);
             }
             // File(imagePath).delete();
@@ -234,36 +235,18 @@ class _CameraPageState extends State<CameraPage> {
         child: new Column(
           children: <Widget>[
             new AspectRatio(
+              key: _stackBoxKey,
               aspectRatio: controller.value.aspectRatio,
-              child: new Stack(
-                key: _stackBoxKey,
-                children: <Widget>[
-                  _cameraBoxContent,
-                  _isLoading
-                      ? Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : Container(),
-                  imagePath == null
-                      ? Container()
-                      : DraggableFocusBox(
-                          Offset(
-                            _deviceWidth / 2 - (2 * _deviceHeight + 100) / 2,
-                            (_deviceHeight / 2) - (2 * _deviceHeight + 100) / 2,
-                          ),
-                          100.00,
-                          100.00,
-                          _stackBoxKey,
-                          leftFocusBoxKey,
-                        ),
-                  // DraggableFocusBox(
-                  //     rightFocusBoxKey,
-                  //     Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.width * 2 / 3 + 20.00),
-                  //     MediaQuery.of(context).size.width * 2 / 3,
-                  //     MediaQuery.of(context).size.width * 2 / 3,
-                  //     _stackBoxKey),
-                  // overlay,
-                ],
+              child: imagePath == null ? _cameraBoxContent : 
+              DraggableFocusBox(
+                _cameraBoxContent,
+                Offset(_stackBoxKey.currentContext.findRenderObject().paintBounds.size.width /4, _stackBoxKey.currentContext.findRenderObject().paintBounds.size.width/2.00 - _stackBoxKey.currentContext.findRenderObject().paintBounds.size.width/8.00),
+                _stackBoxKey.currentContext.findRenderObject().paintBounds.size.width /2,
+                _stackBoxKey.currentContext.findRenderObject().paintBounds.size.width /2 ,
+                _stackBoxKey,
+                leftFocusBoxKey,
+                anchors.length == 0 ? widget.challengeWords.first : widget.challengeWords.last,
+                _isLoading
               ),
             ),
           ],
@@ -303,7 +286,6 @@ class _CameraPageState extends State<CameraPage> {
 
   /*
     Calculates the UI overlay position anchors for better cropping of the taken image.
-    TODO: Allow resizing of the overlay boxes./
   */
   Object getFocusAnchors() {
     RenderBox cameraBox = _stackBoxKey.currentContext.findRenderObject();
@@ -318,16 +300,9 @@ class _CameraPageState extends State<CameraPage> {
     RenderBox rightBox = rightFocusBoxKey.currentContext.findRenderObject();
     Offset leftBoxOffsetRaw = cameraBox
         .globalToLocal(leftBox.localToGlobal(leftBox.paintBounds.topLeft));
-    // Offset leftBoxOffset = Offset(leftBoxOffsetRaw.dx + shadowWidth,
-    //     leftBoxOffsetRaw.dx + shadowWidth / 2);
-    // final leftBoxWidth = leftBox.paintBounds.width - 2 * shadowWidth;
-    // final leftBoxHeight = leftBox.paintBounds.height - shadowWidth;
+
     Offset rightBoxOffsetRaw = cameraBox
         .globalToLocal(rightBox.localToGlobal(rightBox.paintBounds.topLeft));
-    // Offset rightBoxOffset = Offset(rightBoxOffsetRaw.dx + shadowWidth,
-    //     rightBoxOffsetRaw.dy + shadowWidth / 2);
-    // final rightBoxWidth = rightBox.paintBounds.width - 2 * shadowWidth;
-    // final rightBoxHeight = rightBox.paintBounds.height - shadowWidth;
 
     /*
     All returned sizes are RELATIVE to the full image size.
@@ -386,17 +361,18 @@ class _CameraPageState extends State<CameraPage> {
   }
 }
 
-enum ResizeMode { Move, Scale }
-
 class DraggableFocusBox extends StatefulWidget {
   final Offset initPos;
   final double initWidth;
   final double initHeight;
   final GlobalKey parentKey;
   final GlobalKey cropBoxKey;
+  final Widget background;
+  final challengeWord;
+  bool isLoading;
 
-  DraggableFocusBox(this.initPos, this.initWidth, this.initHeight,
-      this.parentKey, this.cropBoxKey);
+  DraggableFocusBox(this.background, this.initPos, this.initWidth,
+      this.initHeight, this.parentKey, this.cropBoxKey, this.challengeWord, this.isLoading);
 
   @override
   _DraggableFocusBoxState createState() => _DraggableFocusBoxState();
@@ -408,6 +384,7 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
   double height;
   double startWidth;
   double startHeight;
+  
 
   //Dragging
   Offset _correctionPanPosition;
@@ -417,41 +394,46 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
     position = widget.initPos;
     width = widget.initWidth;
     height = widget.initHeight;
-
+    print(height);
     super.initState();
   }
 
   //TODO: Implement uni-lateral scaling (rectangular)
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: position.dx,
-      top: position.dy,
+    return CropSelectionStack(
       child: GestureDetector(
-        child: Container(
-          child: Container(
-            key: widget.cropBoxKey,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).primaryColor,
-                width: 5.0,
-                style: BorderStyle.solid,
+        child: new Stack(children: <Widget>[
+          widget.background,
+          Positioned(
+            left: position.dx,
+            top: position.dy,
+            child: Container(
+              key: widget.cropBoxKey,
+              child: Center(
+                child: widget.isLoading ?
+                  CircularProgressIndicator() :
+                  Text(widget.challengeWord, style: TextStyle(color: Colors.white24,fontSize: 64.00),),),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 5.0,
+                  style: BorderStyle.solid,
+                  
+                ),
+                borderRadius: BorderRadius.circular(16.00),
               ),
-            ),
-            width: width,
-            height: height,
-          ),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.black45,
-              width: MediaQuery.of(context).size.height,
+              width: width,
+              height: height,
             ),
           ),
-        ),
+        ]),
         onScaleStart: onScaleStart,
         onScaleUpdate: onScaleUpdate,
         onScaleEnd: onScaleEnd,
       ),
+      position: position,
+      size: Size(width, height),
     );
   }
 
@@ -510,4 +492,75 @@ class Anchor {
       'height': height,
     };
   }
+}
+
+class CropSelectionStack extends SingleChildRenderObjectWidget {
+  final Widget child;
+  final Offset position;
+  final Size size;
+
+  CropSelectionStack({this.child, this.size, this.position})
+      : super(child: child);
+
+  @override
+  _CropSelectionStackFilter createRenderObject(BuildContext context) {
+    return _CropSelectionStackFilter(position, size);
+  }
+
+  @override
+  void updateRenderObject(
+      BuildContext context, _CropSelectionStackFilter filter) {
+    filter.updatePositionAndSize(position, size);
+  }
+}
+
+class _CropSelectionStackFilter extends RenderProxyBox {
+  Offset _position;
+  Size _size;
+
+  _CropSelectionStackFilter(this._position, this._size);
+
+  @override
+  bool get alwaysNeedsCompositing => child != null;
+
+  // passing state changes through to this RenderBox
+  updatePositionAndSize(Offset position, Size size) {
+    this._position = position;
+    this._size = size;
+    // mark the current painting as dirty, triggering re-paint
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    // if (child != null) {
+      assert(needsCompositing);
+      Rect _rectAll = Offset.zero & child.size;
+
+      // print(_focusBoxRect.size.toString());
+      // Rect _rect = Rect.fromLTWH(50.0, 50.0, focus, 400.00);
+      // Layer for image overlay
+      context.canvas.saveLayer(Offset.zero & child.size, Paint());
+      // paint image onto image-layer
+      context.paintChild(child, Offset.zero);
+      Rect _focusBoxRect = _position & _size;
+      // Layer for rectangular mask
+      context.canvas.saveLayer(Offset.zero & child.size, Paint());
+      // draw mask onto mask-layer
+      context.canvas.drawRRect(
+          RRect.fromRectAndRadius(_focusBoxRect, Radius.circular(16.0)),
+          Paint());
+      // Layer for blurr
+      context.canvas.saveLayer(
+          Offset.zero & child.size, Paint()..blendMode = BlendMode.srcOut);
+      // draw the blurr
+      context.canvas.drawRect(_rectAll, Paint()..color = Colors.black87);
+      // blend blur onto mask
+      context.canvas.restore();
+      // blend mask onto image
+      context.canvas.restore();
+      // blend image onto background
+      context.canvas.restore();
+    }
+  // }
 }
