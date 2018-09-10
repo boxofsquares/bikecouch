@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
-import 'dart:convert';
 
+import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:bikecouch/utils/bucket.dart';
 
 import 'package:bikecouch/models/app_state.dart';
 import 'package:bikecouch/components/pill_button.dart';
-import 'package:bikecouch/app_state_container.dart';
 
 import 'package:bikecouch/pages/challenge_results_page.dart';
 
@@ -517,15 +517,25 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
 
     // TODO: Implement boundary checks
     parent = widget.parentKey.currentContext.findRenderObject();
+
     scaledWidth = startWidth * details.scale;
-    scaledHeight = startHeight * details.scale;
+    // scaledHeight = startHeight * details.scale;
+
+    scaledWidth = scaledWidth > 100.00 ? scaledWidth : 100;
+    scaledHeight = scaledWidth;
+    
     scaledPos =
         parent.globalToLocal(details.focalPoint) - _correctionPanPosition;
 
     setState(() {
-      width = scaledWidth;
-      height = scaledHeight;
-      position = scaledPos;
+      position = Offset(
+        scaledPos.dx < 0 || scaledPos.dx + scaledWidth > parent.paintBounds.width ? position.dx : scaledPos.dx,
+        scaledPos.dy < 0 || scaledPos.dy + scaledHeight > parent.paintBounds.height ? position.dy : scaledPos.dy,
+      );
+      if (position.dx + scaledWidth <= parent.paintBounds.width && position.dy + scaledHeight <= parent.paintBounds.height) {
+        width = scaledWidth;
+        height = scaledHeight;
+      }
     });
   }
 
