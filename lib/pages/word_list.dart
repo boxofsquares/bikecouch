@@ -54,8 +54,8 @@ class _WordListState extends State<WordList>
     _isOffline = false;
     _isLoading = false;
     _currentTabIndex = 0;
-    _shuffleWords();
     _setupPlaceholderAnimation();
+    _shuffleWords();
     super.initState();
   }
 
@@ -249,7 +249,7 @@ class _WordListState extends State<WordList>
       print(cameras);
       Navigator.of(context).push(new MaterialPageRoute(
             // NOTE: These are placeholder challenge words for testing [cup, plate].
-            builder: (context) => CameraPage(cameras: cameras, challengeWords: wordPair),
+            builder: (context) => CameraPage(cameras: cameras, challengeWords: wordPair.toList()),
           ));
     }).catchError((e) => print('camera error'));
   }

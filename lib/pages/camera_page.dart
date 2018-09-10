@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:bikecouch/utils/bucket.dart';
 
 import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/components/pill_button.dart';
 import 'package:bikecouch/app_state_container.dart';
 
 import 'package:bikecouch/pages/challenge_results_page.dart';
@@ -19,27 +20,34 @@ import 'package:http/http.dart' as http;
 class CameraPage extends StatefulWidget {
   CameraPage({this.cameras, this.challengeWords});
   final List<CameraDescription> cameras;
-  final Set<String> challengeWords;
+  final List<String> challengeWords;
 
   @override
   _CameraPageState createState() => new _CameraPageState();
 }
 
 class _CameraPageState extends State<CameraPage> {
-  AppState appState;
-  CameraController controller;
   final GlobalKey leftFocusBoxKey = GlobalKey();
   final GlobalKey rightFocusBoxKey = GlobalKey();
   final GlobalKey _stackBoxKey = GlobalKey();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  
+  AppState appState;
+  CameraController controller;
+
   String imagePath;
   List<Anchor> anchors;
+  int _currentAnchor;
+  List<bool> _detectionResults;
   bool _isLoading;
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
 
   @override
   void initState() {
     _isLoading = false;
-    anchors = List<Anchor>();
+    anchors = List<Anchor>(2);
+    _currentAnchor = - 1;
+    _detectionResults = List<bool>(2);
     super.initState();
     controller = new CameraController(widget.cameras[0], ResolutionPreset.high);
     controller.initialize().then((_) {
@@ -54,6 +62,41 @@ class _CameraPageState extends State<CameraPage> {
   void dispose() {
     controller?.dispose();
     super.dispose();
+  }
+
+  _detectLabelForSingleWord(int wordIndex) async {
+    assert(imagePath != null);
+    String b64 = Bucket.imageToBase64String(imagePath);
+    String url = 'https://us-central1-bikecouch.cloudfunctions.net/label_detection';
+       
+    http
+      .post(
+        url,
+        headers: {
+        // 'uuid': '${appState.user.uuid}'
+        },
+        body: {
+          'image': b64,
+          'challengeWords': jsonEncode(widget.challengeWords.sublist(wordIndex, wordIndex + 1)),
+          'anchors': jsonEncode(anchors.sublist(wordIndex, wordIndex +1).map((anchor) => anchor.toJson()).toList()),
+        }
+      )
+      .then((response) {
+        setState(() { 
+          _isLoading = false;
+          _detectionResults[wordIndex] = json.decode(response.body)['result'];
+        });
+        print("Response status: ${response.statusCode}");
+        print("Response body: ${response.body}");
+
+        // Navigator
+        //   .of(context)
+        //   .push(MaterialPageRoute(
+        //       builder: (context) => ChallengeResults(
+        //             success: json.decode(response.body)['result'],
+        //           ),
+        //   ));
+      });
   }
 
   _uploadPhoto(String filePath) async {
@@ -75,30 +118,37 @@ class _CameraPageState extends State<CameraPage> {
     // String rightb64 = base64Encode(right.getBytes());
 
     String b64 = Bucket.imageToBase64String(filePath);
-    String url =
-        'https://us-central1-bikecouch.cloudfunctions.net/resize-crop-and-label';
+    String url = 'https://us-central1-bikecouch.cloudfunctions.net/label_detection';
+        // 'https://us-central1-bikecouch.cloudfunctions.net/resize-crop-and-label';
+       
+    http
+      .post(
+        url,
+        headers: {
+        // 'uuid': '${appState.user.uuid}'
+        },
+        body: {
+          'image': b64,
+          'challengeWords': jsonEncode(widget.challengeWords),
+          'anchors': jsonEncode(anchors.map((anchor) => anchor.toJson())),
+        }
+      )
+      .then((response) {
+        setState(() { 
+          _isLoading = false;
+        });
+        print("Response status: ${response.statusCode}");
+        print("Response body: ${response.body}");
 
-    http.post(url, headers: {
-      // 'uuid': '${appState.user.uuid}'
-    }, body: {
-      'image': b64,
-      'left': widget.challengeWords.first,
-      'right': widget.challengeWords.last,
-      'anchors': jsonEncode({
-        'left': anchors[0].toJson(),
-        'right': anchors[1].toJson(),
-      }),
-    }).then(((response) {
-      setState(() => _isLoading = false);
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
 
-      Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => ChallengeResults(
-                  success: json.decode(response.body)['result'],
-                ),
+        Navigator
+          .of(context)
+          .push(MaterialPageRoute(
+              builder: (context) => ChallengeResults(
+                    success: json.decode(response.body)['result'],
+                  ),
           ));
-    }));
+      });
     // Bucket.uploadFile(filePath, appState.user.uuid);
 
     // VisionResponse vs = await ComputerVision.annotateImage(
@@ -139,7 +189,6 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   _displayTakenPhoto() {
-    setState(() => _isLoading = true);
     _takePhoto().then((filePath) {
       if (mounted) {
         setState(() {
@@ -186,46 +235,51 @@ class _CameraPageState extends State<CameraPage> {
     // var container = AppStateContainer.of(context);
     // appState = container.state;
 
-    final overlay = Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          createFocusBox(leftFocusBoxKey),
-          createFocusBox(rightFocusBoxKey),
-        ]);
-
     if (!controller.value.isInitialized) {
       return new Container();
     }
 
     Widget _cameraBoxContent;
-    FloatingActionButton _actionButton;
+    Widget _actionButton;
 
     if (imagePath == null) {
       _cameraBoxContent = Center(child: CameraPreview(controller));
       _actionButton = FloatingActionButton(
         child: RotatedBox(quarterTurns: 1, child: Icon(Icons.camera_alt)),
-        onPressed: () => _displayTakenPhoto(),
+        onPressed: () {
+          setState(() {
+            _currentAnchor += 1;
+            _isLoading = true;
+          });
+          _displayTakenPhoto();
+        },
       );
     } else {
       _cameraBoxContent = Image.file(File(imagePath));
-      _actionButton = FloatingActionButton(
-          child: Icon(Icons.navigate_next),
-          onPressed: () {
-            setState(() {
-              anchors.add(getFocusAnchor());
-            });
-            if (anchors.length > 1) {
-              setState(() => _isLoading = true);
-              _uploadPhoto(imagePath);
-            }
-            // File(imagePath).delete();
-            // imagePath = null;
-          });
-    }
+      if (_detectionResults[_currentAnchor] != true) {
+        _actionButton = PillButton(
+            text: "Submit",
+            onTap: () {
+              setState(() {
+                anchors[_currentAnchor] = getFocusAnchor();
+                _isLoading = true;
+                // _currentAnchor += 1;
+              });
+              _detectLabelForSingleWord(_currentAnchor);
 
-    double _deviceWidth = MediaQuery.of(context).size.width;
-    double _deviceHeight = MediaQuery.of(context).size.height;
+            // if (anchors.length > 1) {
+            //   setState(() => _isLoading = true);
+            //   _uploadPhoto(imagePath);
+            // }
+          },
+        );
+      } else {
+        _actionButton = PillButton(
+            text: "Next Word",
+            onTap: () => _currentAnchor += 1, 
+            );
+      }
+    }
 
     // TODO: Add WillPopScope to catch back button press...
     return Scaffold(
@@ -245,8 +299,10 @@ class _CameraPageState extends State<CameraPage> {
                 _stackBoxKey.currentContext.findRenderObject().paintBounds.size.width /2 ,
                 _stackBoxKey,
                 leftFocusBoxKey,
-                anchors.length == 0 ? widget.challengeWords.first : widget.challengeWords.last,
-                _isLoading
+                widget.challengeWords[_currentAnchor],
+                _isLoading,
+                _detectionResults[_currentAnchor] ?? false,
+                _detectionResults[_currentAnchor] != null,
               ),
             ),
           ],
@@ -292,10 +348,6 @@ class _CameraPageState extends State<CameraPage> {
     final cameraHeight = cameraBox.paintBounds.height;
     final cameraWidth = cameraBox.paintBounds.width;
 
-    // NOTE: This is a copy-paste from #createFocusBox, should be pulled out into a constant.
-    final shadowWidth = MediaQuery.of(context).size.width * 0.10;
-
-    // Extract the focusbox position and width MINUS the border.
     RenderBox leftBox = leftFocusBoxKey.currentContext.findRenderObject();
     RenderBox rightBox = rightFocusBoxKey.currentContext.findRenderObject();
     Offset leftBoxOffsetRaw = cameraBox
@@ -370,9 +422,11 @@ class DraggableFocusBox extends StatefulWidget {
   final Widget background;
   final challengeWord;
   bool isLoading;
+  bool success;
+  bool retry;
 
   DraggableFocusBox(this.background, this.initPos, this.initWidth,
-      this.initHeight, this.parentKey, this.cropBoxKey, this.challengeWord, this.isLoading);
+      this.initHeight, this.parentKey, this.cropBoxKey, this.challengeWord, this.isLoading, this.success, this.retry);
 
   @override
   _DraggableFocusBoxState createState() => _DraggableFocusBoxState();
@@ -385,7 +439,6 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
   double startWidth;
   double startHeight;
   
-
   //Dragging
   Offset _correctionPanPosition;
 
@@ -400,7 +453,16 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
 
   //TODO: Implement uni-lateral scaling (rectangular)
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { 
+    Color _boxAccent;
+    Color _textAccent;
+    if (widget.retry) {
+      _boxAccent = Colors.redAccent;
+      _textAccent = Colors.redAccent;
+    } else {
+      _boxAccent = widget.success ? Colors.lightGreenAccent : Theme.of(context).primaryColor;
+      _textAccent = widget.success ? Colors.lightGreenAccent : Colors.white24;
+    }
     return CropSelectionStack(
       child: GestureDetector(
         child: new Stack(children: <Widget>[
@@ -413,10 +475,10 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
               child: Center(
                 child: widget.isLoading ?
                   CircularProgressIndicator() :
-                  Text(widget.challengeWord, style: TextStyle(color: Colors.white24,fontSize: 64.00),),),
+                  Text(widget.challengeWord, style: TextStyle(color:_textAccent,fontSize: 64.00),),),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Theme.of(context).primaryColor,
+                  color: _boxAccent,
                   width: 5.0,
                   style: BorderStyle.solid,
                   
