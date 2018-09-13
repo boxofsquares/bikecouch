@@ -85,7 +85,6 @@ class _AppStateContainerState extends State<AppStateContainer> {
 
   setUser(User user) {
     setState(() => state.user = user);
-    print(user.name);
   }
 
   // isLoading(bool isLoading) {

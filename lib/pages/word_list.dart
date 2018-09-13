@@ -78,25 +78,10 @@ class _WordListState extends State<WordList>
     return Scaffold(
       appBar: new AppBar(
         title: new Text('${appState.user.name}'), //${appState.user.name}
-        // title: new Text('Test'), //${appState.user.name}
-
-        leading: IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () {
-              _auth.signOut();
-              container.setUser(null);
-              // container.isSignedIn(false);
-            }),
         actions: <Widget>[
           IconButton(
-            icon: _currentTabIndex == 0
-                ? Icon(Icons.shuffle)
-                : Icon(Icons.refresh),
-            onPressed: _currentTabIndex == 0 ? _shuffleWords : () => {},
-          ),
-          IconButton(
-            icon: Icon(Icons.person_add),
-            onPressed: () => Navigator.pushNamed(context, '/add_friends'),
+            icon: Icon(Icons.settings),
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
           )
         ],
         elevation: 0.0,

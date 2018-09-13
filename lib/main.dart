@@ -6,6 +6,7 @@ import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/word_list.dart';
 import 'pages/add_friends_page.dart';
+import 'pages/profile_page.dart';
 
 import 'app_state_container.dart';
 import 'models/app_state.dart';
@@ -83,6 +84,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => RegisterPage(),
         '/add_friends': (context) => AddFriendsPage(),
         '/word_list': (context) => WordList(),
+        '/profile': (context) => ProfilePage(),
       },
     );
   }

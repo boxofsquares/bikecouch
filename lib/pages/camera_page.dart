@@ -84,7 +84,7 @@ class _CameraPageState extends State<CameraPage> {
       .then((response) {
         setState(() { 
           _isLoading = false;
-          _detectionResults[wordIndex] = json.decode(response.body)['result'];
+          _detectionResults[wordIndex] = jsonDecode(response.body)['result'];
         });
         print("Response status: ${response.statusCode}");
         print("Response body: ${response.body}");
@@ -145,7 +145,7 @@ class _CameraPageState extends State<CameraPage> {
           .of(context)
           .push(MaterialPageRoute(
               builder: (context) => ChallengeResults(
-                    success: json.decode(response.body)['result'],
+                    success: jsonDecode(response.body)['result'],
                   ),
           ));
       });
@@ -276,7 +276,7 @@ class _CameraPageState extends State<CameraPage> {
       } else {
         _actionButton = PillButton(
             text: "Next Word",
-            onTap: () => _currentAnchor += 1, 
+            onTap: () => setState(() => _currentAnchor += 1), 
             );
       }
     }
@@ -302,7 +302,7 @@ class _CameraPageState extends State<CameraPage> {
                 widget.challengeWords[_currentAnchor],
                 _isLoading,
                 _detectionResults[_currentAnchor] ?? false,
-                _detectionResults[_currentAnchor] != null,
+                !(_detectionResults[_currentAnchor] ?? true),
               ),
             ),
           ],

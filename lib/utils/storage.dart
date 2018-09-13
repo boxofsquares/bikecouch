@@ -30,6 +30,9 @@ class Storage {
   static Future<bool> registerUserDetails(String userUID, String displayName) {
     _store.collection('userDetails').document(userUID).setData({
       'displayName': displayName,
+      'points': 0,
+      'tokens': 5,
+      'image': '',
     });
     // for now, return true
     return Future.value(true);
@@ -139,8 +142,10 @@ class Storage {
     return User(
         uuid: firebaseUser.uid,
         email: firebaseUser.email,
-        image: '',
-        name: d['displayName']);
+        image: d['image'],
+        name: d['displayName'],
+        points: d['points'],
+        tokens: d['tokens']);
   }
 
   /*
