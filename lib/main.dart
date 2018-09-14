@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'bikecouch',
       theme: ThemeData(
-        primarySwatch: Colors.purple,
+        primarySwatch: Colors.pink,
         // primaryColor: Colors.green, //ask Janik which green he wants
         hintColor: Colors.grey[300],
       ),

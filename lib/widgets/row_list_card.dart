@@ -24,7 +24,7 @@ class RowListCard extends StatelessWidget {
               leftText,
               style: TextStyle(
                 // fontWeight: FontWeight.bold
-                fontSize: 18.0
+                // fontSize: 18.0
               )
 
             ),
@@ -34,7 +34,7 @@ class RowListCard extends StatelessWidget {
             rightText,
             style: TextStyle(
                 // fontWeight: FontWeight.bold
-                fontSize: 18.0
+                // fontSize: 18.0
               )
           )
 

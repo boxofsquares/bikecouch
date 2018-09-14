@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 class ActionableListCard extends StatelessWidget {
-  ActionableListCard({this.text, this.onPress});
+  ActionableListCard({@required this.text, @required this.onPress, this.textColor});
 
   final String text;
   final onPress;
+  final textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +25,13 @@ class ActionableListCard extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(text, style: TextStyle(fontSize: 18.0)),
+              child: Text(text, style: 
+              // Theme.of(context).textTheme.button
+              TextStyle(
+                  // fontSize: 18.0,
+                  color: textColor
+                )
+              ),
             ),
             Icon(
               Icons.chevron_right,

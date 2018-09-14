@@ -52,7 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
     // setState(() => _isLoading = true);
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(email: _email, password: _password);
     Storage.registerUserDetails(user.uid, _name);
-    User userDetails = User(uuid: user.uid, email: user.email, name: _name, image: '');
+    User userDetails = User(uuid: user.uid, email: user.email, name: _name, image: '', points: 0, tokens: 5); 
     // setState(() => _isLoading = false);
     return userDetails;
   }
