@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'models/app_state.dart';
-import 'models/user.dart';
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/models/user.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'utils/storage.dart';
+import 'package:bikecouch/utils/storage.dart';
 
 class AppStateContainer extends StatefulWidget {
   // Your apps state is managed by the container

@@ -1,13 +1,19 @@
+// Flutter
 import 'package:flutter/material.dart';
-import 'dart:async';
 
+// Firebase
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../utils/storage.dart';
+// Dart
+import 'dart:async';
 
-import '../models/app_state.dart';
-import '../models/user.dart';
-import '../app_state_container.dart';
+// Utils
+import 'package:bikecouch/utils/storage.dart';
+
+// Models
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/models/user.dart';
+import 'package:bikecouch/app_state_container.dart';
 
 
 class RegisterPage extends StatefulWidget {

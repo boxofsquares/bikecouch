@@ -1,26 +1,34 @@
+// Flutter
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
 
+// Dart
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
-
-import 'package:bikecouch/utils/bucket.dart';
-
-import 'package:bikecouch/models/app_state.dart';
-import 'package:bikecouch/components/pill_button.dart';
-
-import 'package:bikecouch/pages/challenge_results_page.dart';
-
 import 'package:http/http.dart' as http;
 
+// Pages
+import 'package:bikecouch/pages/challenge_results_page.dart';
+
+// Utils
+import 'package:bikecouch/utils/bucket.dart';
+
+// Models
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/models/challenge.dart';
+
+// UI Components
+import 'package:bikecouch/components/pill_button.dart';
+
+
+
 class CameraPage extends StatefulWidget {
-  CameraPage({this.cameras, this.challengeWords});
+  CameraPage({this.cameras, this.challenge});
   final List<CameraDescription> cameras;
-  final List<String> challengeWords;
+  final Challenge challenge;
 
   @override
   _CameraPageState createState() => new _CameraPageState();
@@ -40,11 +48,13 @@ class _CameraPageState extends State<CameraPage> {
   int _currentAnchor;
   List<bool> _detectionResults;
   bool _isLoading;
+  bool _terminate;
 
 
   @override
   void initState() {
     _isLoading = false;
+    _terminate = false;
     anchors = List<Anchor>(2);
     _currentAnchor = - 1;
     _detectionResults = List<bool>(2);
@@ -77,25 +87,30 @@ class _CameraPageState extends State<CameraPage> {
         },
         body: {
           'image': b64,
-          'challengeWords': jsonEncode(widget.challengeWords.sublist(wordIndex, wordIndex + 1)),
+          'challengeWords': jsonEncode(widget.challenge.wordPair.sublist(wordIndex, wordIndex + 1)),
           'anchors': jsonEncode(anchors.sublist(wordIndex, wordIndex +1).map((anchor) => anchor.toJson()).toList()),
         }
       )
       .then((response) {
+        bool _prevResult = _detectionResults[wordIndex] ?? true; // assign previous value (fail) or true (not tried yet)
         setState(() { 
           _isLoading = false;
           _detectionResults[wordIndex] = json.decode(response.body)['result'];
+          _terminate = (_detectionResults.last ?? false) || !(_prevResult || _detectionResults[wordIndex]);
         });
         print("Response status: ${response.statusCode}");
         print("Response body: ${response.body}");
 
-        // Navigator
-        //   .of(context)
-        //   .push(MaterialPageRoute(
-        //       builder: (context) => ChallengeResults(
-        //             success: json.decode(response.body)['result'],
-        //           ),
-        //   ));
+        if (_terminate) {
+        Navigator
+          .of(context)
+          .push(MaterialPageRoute(
+              builder: (context) => ChallengeResults(
+                    success: _determineSuccess(),
+                    challenge: widget.challenge,
+                  ),
+          ));
+        }
       });
   }
 
@@ -129,7 +144,7 @@ class _CameraPageState extends State<CameraPage> {
         },
         body: {
           'image': b64,
-          'challengeWords': jsonEncode(widget.challengeWords),
+          'challengeWords': jsonEncode(widget.challenge.wordPair),
           'anchors': jsonEncode(anchors.map((anchor) => anchor.toJson())),
         }
       )
@@ -146,6 +161,7 @@ class _CameraPageState extends State<CameraPage> {
           .push(MaterialPageRoute(
               builder: (context) => ChallengeResults(
                     success: json.decode(response.body)['result'],
+                    challenge: widget.challenge,
                   ),
           ));
       });
@@ -276,9 +292,9 @@ class _CameraPageState extends State<CameraPage> {
       } else {
         _actionButton = PillButton(
             text: "Next Word",
-            onTap: () => _currentAnchor += 1, 
+            onTap: () => setState(() => _currentAnchor += 1), 
             );
-      }
+      } 
     }
 
     // TODO: Add WillPopScope to catch back button press...
@@ -299,10 +315,10 @@ class _CameraPageState extends State<CameraPage> {
                 _stackBoxKey.currentContext.findRenderObject().paintBounds.size.width /2 ,
                 _stackBoxKey,
                 leftFocusBoxKey,
-                widget.challengeWords[_currentAnchor],
+                widget.challenge.wordPair[_currentAnchor],
                 _isLoading,
                 _detectionResults[_currentAnchor] ?? false,
-                _detectionResults[_currentAnchor] != null,
+                _detectionResults[_currentAnchor] == false,
               ),
             ),
           ],
@@ -311,6 +327,12 @@ class _CameraPageState extends State<CameraPage> {
       floatingActionButton: _actionButton,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  bool _determineSuccess() {
+    return !_detectionResults.any((result) {
+      return result != true;
+    });
   }
 
   Widget createFocusBox(Key key) {

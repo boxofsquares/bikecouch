@@ -1,4 +1,5 @@
-import 'user.dart';
+// Models
+import 'package:bikecouch/models/user.dart';
 
 class AppState {
   // Your app will use this to know when to display loading spinners.

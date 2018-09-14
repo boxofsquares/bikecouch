@@ -1,6 +1,8 @@
+// Flutter
 import 'package:flutter/material.dart';
 
-import 'user.dart';
+// Models
+import 'package:bikecouch/models/user.dart';
 
 
 enum FriendshipStatus { 

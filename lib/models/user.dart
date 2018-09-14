@@ -1,4 +1,7 @@
+// Flutter
 import 'package:flutter/material.dart';
+
+// Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {

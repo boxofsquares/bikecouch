@@ -1,9 +1,10 @@
-import 'user.dart';
+// Models
+import 'package:bikecouch/models/friend.dart';
 
 class Challenge {
   final String uid;
-  final User challenger;
-  final Set<String> wordPair;
+  final Friend challenger;
+  final List<String> wordPair;
   
   Challenge({this.uid, this.challenger, this.wordPair});
 }

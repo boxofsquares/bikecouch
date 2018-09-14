@@ -2,10 +2,11 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../models/user.dart';
-import '../models/friendship.dart';
-import '../models/invitation.dart';
-import '../models/challenge.dart';
+import 'package:bikecouch/models/user.dart';
+import 'package:bikecouch/models/friend.dart';
+import 'package:bikecouch/models/friendship.dart';
+import 'package:bikecouch/models/invitation.dart';
+import 'package:bikecouch/models/challenge.dart';
 
 class Storage {
   static final Firestore _store = Firestore.instance;
@@ -215,21 +216,27 @@ class Storage {
         .getDocuments();
 
     List<Future<Challenge>> futures = q.documents.map((doc) async {
-      Set<String> set = new Set<String>();
-      set.add(doc.data['wordpair'][0]);
-      set.add(doc.data['wordpair'][1]);
+      // DocumentSnapshot ds = await _store
+      //     .collection('userDetails')
+      //     .document(doc.data['challenger'])
+      //     .get();
 
-      DocumentSnapshot ds = await _store
-          .collection('userDetails')
-          .document(doc.data['challenger'])
-          .get();
+      // Friend challenger = User.fromDocument(ds);
 
-      User challenger = User.fromDocument(ds);
+      List<dynamic> futures = await Future.wait([
+              _store
+                .collection('userDetails')
+                .document(doc.data['challenger'])
+                .get(),
+              getScoreForUsers(userUID, doc.data['challenger']),
+            ]);
+      Friend challenger = Friend.fromDocument(futures[0]);
+      challenger.score = futures[1];
 
       return new Challenge(
         uid: doc.documentID,
         challenger: challenger,
-        wordPair: set,
+        wordPair: doc.data['wordpair'].cast<String>(),
       );
     }).toList();
 
@@ -256,6 +263,34 @@ class Storage {
     return Future.value(true);
   }
 
+  static Future<bool> deleteChallenge(Challenge challenge) {
+    _store.collection('challenges').document(challenge.uid).delete();
+    return Future.value(true);
+  }
+
+  static Future<int> getScoreForUsers(String challengerUID, String challengeeUID) async {
+    DocumentSnapshot ds = await _store
+      .collection('userScores')
+      .document(challengerUID)
+      .collection('opponents')
+      .document(challengeeUID)
+      .get();
+    return ds.data != null ? ds.data['score'] ??  0 : 0;
+  }
+
+  static Future<bool> setScoreForUsers(String challengeeUID, String challengerUID, int newScore) async {
+      _store
+        .collection('userScores')
+        .document(challengeeUID)
+        .collection('opponents')
+        .document(challengerUID)
+        .setData({
+          'score': newScore 
+        });
+
+    return Future.value(true);
+  }
+
   // STREAMS
   static Stream<List<Challenge>> pendingChallengesStreamFor(String userUID) {
     return _store
@@ -268,21 +303,24 @@ class Storage {
         })
         .asyncMap((qs) async {
       List<Future<Challenge>> futures = qs.documents.map((doc) async {
-        Set<String> set = new Set<String>();
-        set.add(doc.data['wordpair'][0]);
-        set.add(doc.data['wordpair'][1]);
-
-        DocumentSnapshot ds = await _store
+        // Set<String> set = new Set<String>();
+        // set.add(doc.data['wordpair'][0]);
+        // set.add(doc.data['wordpair'][1]);
+        List<dynamic> futures = await Future.wait([
+          _store
             .collection('userDetails')
             .document(doc.data['challenger'])
-            .get();
-
-        User challenger = User.fromDocument(ds);
+            .get(),
+          getScoreForUsers(userUID, doc.data['challenger']),
+        ]);
+        
+        Friend challenger = Friend.fromDocument(futures[0]);
+        challenger.score = futures[1];
 
         return new Challenge(
           uid: doc.documentID,
           challenger: challenger,
-          wordPair: set,
+          wordPair: doc.data['wordpair'].cast<String>(),
         );
       }).toList();
       return Future.wait(futures);
@@ -308,20 +346,24 @@ class Storage {
     });
   }
 
-  static Stream<List<User>> friendsStreamFor(String userUID) {
+  static Stream<List<Friend>> friendsStreamFor(String userUID) {
     return _store
         .collection('friends')
         .where('uuid', isEqualTo: userUID)
         .snapshots()
         .asyncMap((qs) async {
-      List<Future<User>> futures = qs.documents.map((document) async {
-        DocumentSnapshot ds = await _store
-            .collection('userDetails')
-            .document(document.data['fuid'])
-            .get();
-        return User.fromDocument(ds);
-      }).toList();
-      return await Future.wait(futures);
-    });
+          List<Future<Friend>> futures = qs.documents.map((document) async {
+            List<dynamic> futures = await Future.wait([
+              _store
+                .collection('userDetails')
+                .document(document.data['fuid'])
+                .get(),
+              getScoreForUsers(userUID, document.data['fuid']),
+            ]);
+            Friend friend = Friend.fromDocument(futures[0]);
+            friend.score = futures[1];
+          }).toList();
+          return await Future.wait(futures);
+        });
   }
 }

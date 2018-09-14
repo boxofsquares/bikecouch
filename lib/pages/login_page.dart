@@ -1,13 +1,19 @@
-import 'dart:async';
-
+// Flutter
 import 'package:flutter/material.dart';
+
+// Firebase
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../utils/storage.dart';
-import '../models/user.dart';
+// Dart
+import 'dart:async';
 
-import '../app_state_container.dart';
-import '../models/app_state.dart';
+// Utils
+import 'package:bikecouch/utils/storage.dart';
+
+// Models
+import 'package:bikecouch/models/user.dart';
+import 'package:bikecouch/app_state_container.dart';
+import 'package:bikecouch/models/app_state.dart';
 
 
 class LoginPage extends StatefulWidget {

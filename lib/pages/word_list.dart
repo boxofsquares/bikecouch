@@ -1,23 +1,31 @@
+// Flutter
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:english_words/english_words.dart';
-import 'dart:math';
+
+// Firebase
 import 'package:firebase_auth/firebase_auth.dart';
+
+// 3rd Party
+import 'package:english_words/english_words.dart';
+
+// Pages
 import 'package:camera/camera.dart';
+import 'package:bikecouch/pages/target_list.dart';
+import 'package:bikecouch/pages/camera_page.dart'; //adding page because want to navigate by passing variable and don't know how to do that with route
 
-// Custom Packages
-import '../components/list_card.dart';
-import '../utils/datamuse.dart' as DataMuse;
-import '../utils/storage.dart';
-import 'target_list.dart';
-import '../components/pill_button.dart';
+// Utils
+import 'package:bikecouch/utils/storage.dart';
 
-import '../models/app_state.dart';
-import '../app_state_container.dart';
-import '../models/challenge.dart';
-import '../components/fade_animation_widget.dart';
+// Models
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/app_state_container.dart';
+import 'package:bikecouch/models/challenge.dart';
 
-import '../pages/camera_page.dart'; //adding page because want to navigate by passing variable and don't know how to do that with route
+// UI Components
+import 'package:bikecouch/components/pill_button.dart';
+import 'package:bikecouch/components/list_card.dart';
+import 'package:bikecouch/components/fade_animation_widget.dart';
+
 
 // const WORD_SOURCE = 0; // use for english nouns
 const WORD_SOURCE = 1; // use for DataMuse API
@@ -243,14 +251,16 @@ class _WordListState extends State<WordList>
     });
   }
 
-  void _launchCamera(Set<String> wordPair) {
-    print('hey');
-    availableCameras().then((cameras) {
+  void _launchCamera(Challenge challenge) {
+    availableCameras().then((cameras) async {
       print(cameras);
-      Navigator.of(context).push(new MaterialPageRoute(
-            // NOTE: These are placeholder challenge words for testing [cup, plate].
-            builder: (context) => CameraPage(cameras: cameras, challengeWords: wordPair.toList()),
+      int returningPageIndex = await Navigator.of(context).push(new MaterialPageRoute(
+            builder: (context) => CameraPage(
+              cameras: cameras,
+              challenge: challenge,
+              ),
           ));
+      _currentTabIndex = returningPageIndex ?? _currentTabIndex;
     }).catchError((e) => print('camera error'));
   }
 
@@ -282,7 +292,9 @@ class _WordListState extends State<WordList>
                   enabled: true,
                   leadingIcon: Icon(Icons.send),
                   trailingIcon: Text(challenge.challenger.name),
-                  onTap: () => _launchCamera(challenge.wordPair),
+                  onTap: () => _launchCamera(
+                    challenge,
+                    ),
                 );
               }).toList();
             }

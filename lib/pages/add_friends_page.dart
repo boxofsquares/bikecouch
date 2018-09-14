@@ -1,16 +1,25 @@
+// Flutter
 import 'package:flutter/material.dart';
+
+// Firebase
 import 'package:firebase_auth/firebase_auth.dart';
+
+// 3rd Party
 import 'package:english_words/english_words.dart';
 
-// Custom Packages
-import '../components/list_card.dart';
-import '../components/fade_animation_widget.dart';
-import '../utils/storage.dart';
-import '../models/friendship.dart';
-import '../models/app_state.dart';
-import '../app_state_container.dart';
+// Utils
+import 'package:bikecouch/utils/storage.dart';
 
-import '../models/invitation.dart';
+// Models
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/app_state_container.dart';
+import 'package:bikecouch/models/friendship.dart';
+import 'package:bikecouch/models/invitation.dart';
+
+// UI Components
+import 'package:bikecouch/components/list_card.dart';
+import 'package:bikecouch/components/fade_animation_widget.dart';
+
 
 class AddFriendsPage extends StatefulWidget {
   AddFriendsPage({Key key}) : super(key: key);

@@ -1,14 +1,22 @@
+// Flutter
 import 'package:flutter/material.dart';
+
+// 3rd Party
 import 'package:english_words/english_words.dart';
 
-import '../components/list_card.dart';
-import '../components/pill_button.dart';
-import '../components/fade_animation_widget.dart';
-import '../utils/storage.dart';
-import '../models/user.dart';
+// Utils
+import 'package:bikecouch/utils/storage.dart';
 
-import '../models/app_state.dart';
-import '../app_state_container.dart';
+// Models
+import 'package:bikecouch/models/friend.dart';
+import 'package:bikecouch/models/app_state.dart';
+import 'package:bikecouch/app_state_container.dart';
+
+// UI Components
+import 'package:bikecouch/components/list_card.dart';
+import 'package:bikecouch/components/pill_button.dart';
+import 'package:bikecouch/components/fade_animation_widget.dart';
+
 
 class TargetList extends StatefulWidget {
   final List<String> challenge;
@@ -88,7 +96,7 @@ class TargetListState extends State<TargetList>
   Widget buildFriendList() {
     return new StreamBuilder(
       stream: Storage.friendsStreamFor(appState.user.uuid),
-      builder: (BuildContext context, AsyncSnapshot<List<User>> snap) {
+      builder: (BuildContext context, AsyncSnapshot<List<Friend>> snap) {
         List<Widget> listItems;
         if (snap.hasData) {
           if (placeholderAnimationController.isAnimating) {
@@ -106,15 +114,17 @@ class TargetListState extends State<TargetList>
               )
             ];
           } else {
-            listItems = snap.data.where((user) {
-              return user.name.indexOf(_searchExpression) > -1;
-            }).map((user) {
+            listItems = snap.data.where((friend) {
+              return friend.name.indexOf(_searchExpression) > -1;
+            }).map((friend) {
               return new ListCard(
-                isSelected: _targetUIDs.contains(user.uuid),
-                text: user.name,
-                onTap: () => selectTarget(user.uuid),
+                isSelected: _targetUIDs.contains(friend.uuid),
+                text: friend.name,
+                onTap: () => selectTarget(friend.uuid),
                 leadingIcon:
-                    new CircleAvatar(child: Text(user.name.substring(0, 1))),
+                    new CircleAvatar(child: Text(friend.name.substring(0, 1))),
+                trailingIcon: 
+                  new Text('${friend.score}'), 
               );
             }).toList();
           }
