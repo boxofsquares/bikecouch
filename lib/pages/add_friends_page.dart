@@ -51,6 +51,12 @@ class AddFriendsPageState extends State<AddFriendsPage>
     super.initState();
   }
 
+  @override
+  void dispose() {
+    placeholderAnimationController.dispose();
+    super.dispose();
+  }
+
   _handleTabBar(int i) {
     setState(() {
       _currentTabIndex = i;

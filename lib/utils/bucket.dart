@@ -1,8 +1,10 @@
-import 'dart:async';
+// Dart
 import 'dart:io';
-import 'package:image/image.dart' as im;
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:convert';
+
+// Firebase
+import 'package:firebase_storage/firebase_storage.dart';
+
 class Bucket {
   static final FirebaseStorage _bucket = FirebaseStorage.instance;
 

@@ -25,7 +25,7 @@ class ChallengeResults extends StatelessWidget {
     appState = container.state;
 
     Storage.deleteChallenge(challenge);
-    Storage.setScoreForUsers(
+    Storage.updateScoreWithFriend(
                       appState.user.uuid,
                       this.challenge.challenger.uuid,
                       challenge.challenger.score + 100);

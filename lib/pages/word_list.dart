@@ -68,6 +68,12 @@ class _WordListState extends State<WordList>
   }
 
   @override
+  void dispose() {
+    placeholderAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var container = AppStateContainer.of(context);
     appState = container.state;

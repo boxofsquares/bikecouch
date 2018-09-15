@@ -1,6 +1,8 @@
+// Dart
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
+
 class DataMuseWord {
   final String word;
   final List<String> tags;
