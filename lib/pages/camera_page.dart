@@ -49,7 +49,7 @@ class _CameraPageState extends State<CameraPage> {
   List<bool> _detectionResults;
   bool _isLoading;
   bool _terminate;
-
+  double _cameraRatio;
 
   @override
   void initState() {
@@ -63,6 +63,9 @@ class _CameraPageState extends State<CameraPage> {
     controller.initialize().then((_) {
       if (!mounted) {
         return;
+      } else {
+        print(controller.value.aspectRatio);
+        _cameraRatio = controller.value.aspectRatio;
       }
       setState(() {});
     });
@@ -297,16 +300,25 @@ class _CameraPageState extends State<CameraPage> {
       } 
     }
 
+    final deviceRatio = MediaQuery.of(context).size.width / MediaQuery.of(context).size.height;
+
+
     // TODO: Add WillPopScope to catch back button press...
     return Scaffold(
       key: _scaffoldKey,
-      body: new Container(
-        color: Colors.black,
-        child: new Column(
-          children: <Widget>[
-            new AspectRatio(
+      body: Transform.scale(
+        // color: Colors.black,
+        // child: new Column(
+        //   children: <Widget>[
+        
+        //     // new AspectRatio(
+        alignment: Alignment.topCenter,
+        scale: _cameraRatio / deviceRatio,
+        // child: Center(
+          child: AspectRatio(
+              aspectRatio: _cameraRatio,
               key: _stackBoxKey,
-              aspectRatio: controller.value.aspectRatio,
+              // aspectRatio: controller.value.aspectRatio,
               child: imagePath == null ? _cameraBoxContent : 
               DraggableFocusBox(
                 _cameraBoxContent,
@@ -321,9 +333,8 @@ class _CameraPageState extends State<CameraPage> {
                 _detectionResults[_currentAnchor] == false,
               ),
             ),
-          ],
         ),
-      ),
+        // ),
       floatingActionButton: _actionButton,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
@@ -521,6 +532,9 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
     );
   }
 
+  // TODO:
+  // The changes in this method were an attempt to make the boundary check global.
+  // This needs to be looked back at... :/
   void onScaleStart(ScaleStartDetails details) {
     RenderBox parentBox = widget.parentKey.currentContext.findRenderObject();
     setState(() {
@@ -528,6 +542,7 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
       startHeight = height;
       _correctionPanPosition =
           parentBox.globalToLocal(details.focalPoint) - position;
+          // details.focalPoint - position;
     });
   }
 
@@ -537,24 +552,28 @@ class _DraggableFocusBoxState extends State<DraggableFocusBox> {
     Offset scaledPos;
     RenderBox parent;
 
-    // TODO: Implement boundary checks
     parent = widget.parentKey.currentContext.findRenderObject();
 
     scaledWidth = startWidth * details.scale;
-    // scaledHeight = startHeight * details.scale;
 
     scaledWidth = scaledWidth > 100.00 ? scaledWidth : 100;
     scaledHeight = scaledWidth;
     
     scaledPos =
         parent.globalToLocal(details.focalPoint) - _correctionPanPosition;
+        // details.focalPoint - _correctionPanPosition;
+
 
     setState(() {
       position = Offset(
         scaledPos.dx < 0 || scaledPos.dx + scaledWidth > parent.paintBounds.width ? position.dx : scaledPos.dx,
         scaledPos.dy < 0 || scaledPos.dy + scaledHeight > parent.paintBounds.height ? position.dy : scaledPos.dy,
+        // scaledPos.dx < 0 || scaledPos.dx + scaledWidth > MediaQuery.of(context).size.width ? position.dx : scaledPos.dx,
+        // scaledPos.dy < 0 || scaledPos.dy + scaledHeight > MediaQuery.of(context).size.height ? position.dy : scaledPos.dy,
       );
+     
       if (position.dx + scaledWidth <= parent.paintBounds.width && position.dy + scaledHeight <= parent.paintBounds.height) {
+      // if (position.dx + scaledWidth <= MediaQuery.of(context).size.width && position.dy + scaledHeight <= parent.paintBounds.height) {
         width = scaledWidth;
         height = scaledHeight;
       }

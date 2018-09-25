@@ -5,6 +5,9 @@ import 'package:flutter/cupertino.dart';
 // Dart
 import 'dart:io' show Platform;
 
+// Components
+import 'package:bikecouch/components/platform_widget.dart';
+
 /*
   This is WORK IN PROGESS and does not work AT ALL
 
@@ -14,41 +17,58 @@ import 'dart:io' show Platform;
     with a platform agnostic scaffolding like this one. :(
 */
 
-class GenericScaffold extends StatelessWidget {
+class PlatformScaffold extends PlatformWidget {
   final Widget body;
-  final List<Widget> appBarWidgets;
-  final String appBarText;
+  final Widget appbar;
   final Widget floatingActionButton;
   final FloatingActionButtonLocation floatingActionButtonLocation;
 
-  GenericScaffold({
+  PlatformScaffold({
     Key key, 
     this.body, 
-    this.appBarText, 
-    this.appBarWidgets, 
+    this.appbar, 
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     }) 
-    : super( key : key);
+    : super( key : key );
 
-  Widget build(BuildContext context) {
-  if (Platform.isAndroid) {
+  @override
+  Scaffold buildAndroidWidget(BuildContext context) {
     return Scaffold(
-      appBar: new AppBar(
-        title: new Text(appBarText),
-        actions: this.appBarWidgets,
-      ),
-      body: this.body,
+      appBar: appbar,
+      body: body,
       floatingActionButton: this.floatingActionButton,
-      floatingActionButtonLocation: this.floatingActionButtonLocation,
-    );
-  } else {
-    return CupertinoPageScaffold(
-      navigationBar: new CupertinoNavigationBar(
-        middle: new Text(appBarText),
-      ),
-      child: body,
+      floatingActionButtonLocation: this.floatingActionButtonLocation, 
     );
   }
+
+  @override
+  buildIOSWidget(BuildContext context) {
+    Widget scaffoldBody;
+    if (floatingActionButton == null) {
+      scaffoldBody = this.body;
+    } else {
+      scaffoldBody = new Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          this.body,
+          Positioned(
+            bottom: 0.00,
+            left: 0.00,
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                floatingActionButton,
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    return CupertinoPageScaffold(
+      navigationBar: appbar,
+      child: scaffoldBody,
+    );
   }
 }

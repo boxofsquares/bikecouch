@@ -5,6 +5,7 @@
  * @param {!Object} res HTTP response context.
  */
 
+const storage = require('@google-cloud/storage')();
 const vision = require('@google-cloud/vision').v1p3beta1;
 const sharp = require('sharp');
 
@@ -78,7 +79,12 @@ exports.labelDetection = (req, res) => {
           .min()
           .toBuffer()
           .then(outputBuffer => {
-            return outputBuffer.toString('base64');
+            var base64Buffer = outputBuffer.toString('base64');
+            var bucket = storage.bucket('gs://bikecouch.appspot.com');
+            bucket.file(Date.now().toString()).save(outputBuffer, { contentType: 'image/jpg' }).then((err) => {
+              if (err) { Logger.log("Unable to upload image.");}              
+            });
+            return base64Buffer;
           });
       });
       return Promise.all(promises)
